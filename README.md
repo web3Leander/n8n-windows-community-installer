@@ -3,7 +3,7 @@
 An unofficial, community-created installation wizard for [n8n](https://n8n.io) on Windows systems.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
+[![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
 
 ## ⚠️ IMPORTANT DISCLAIMER
 
@@ -23,14 +23,9 @@ This interactive installation wizard simplifies the process of installing n8n on
 
 ## ✨ Features
 
-- **Two Installation Modes:**
-  - Quick Install: Fast, standard setup with sensible defaults
-  - Custom Install: Full control over every aspect of the installation
-
-- **Flexible Installation Options:**
-  - Global installation (system-wide npm install)
-  - Folder-specific installation (isolated, portable setup)
-  - Custom data directory selection
+- **Streamlined Installation:**
+  - Choose between global or folder-specific installation
+  - Automatic data directory configuration (no separate prompts)
   - Network configuration (custom host/IP and port)
 
 - **Smart Installation:**
@@ -43,6 +38,7 @@ This interactive installation wizard simplifies the process of installing n8n on
   - Generates comprehensive README.txt in installation folder
   - Includes quick start guide, troubleshooting tips, and resource links
   - Start scripts with configured network settings
+  - Clear explanation of n8n's automatic `.n8n` folder creation
 
 ## 📦 System Requirements
 
@@ -68,41 +64,36 @@ This interactive installation wizard simplifies the process of installing n8n on
 3. **Follow the prompts** in the installation wizard
 4. **Start n8n** using the generated start script or command
 
-## 📖 Installation Modes
+## 📖 Installation Options
 
-### Quick Install
+### Global Installation
 
-Perfect for users who want to get started quickly with standard settings:
+Installs n8n system-wide using npm:
 
-```
-1. Installs n8n globally via npm
-2. Data stored in: %USERPROFILE%\.n8n
-3. Configure network settings (host and port)
-4. Ready to use with 'n8n start' command
-```
+- n8n command available from any terminal
+- Data stored in `%USERPROFILE%\.n8n`
+- Standard installation method
+- Easy updates with `npm update -g n8n`
 
-### Custom Install
+### Folder-Specific Installation
 
-For users who need more control:
+Installs n8n in a specific folder:
 
-```
-1. Choose between global or folder-specific installation
-2. Select custom data directory
-3. Configure network settings (host/IP and port)
-4. Automatic PATH configuration
-5. Generated start scripts with your settings
-```
+- Completely isolated installation
+- Data stored in the same folder
+- No system-wide changes
+- Useful for testing or running multiple versions
+- Portable (can be moved/backed up easily)
 
-### Installation Mode Comparison
+## 🎯 How It Works
 
-| Feature | Quick Install | Custom Install |
-|---------|--------------|----------------|
-| Installation Speed | ⚡ Fast | ⏱️ Moderate |
-| Installation Type | Global only | Global or Folder |
-| Data Directory | Default (`%USERPROFILE%\.n8n`) | Custom location |
-| Network Config | Configurable | Configurable |
-| Command Access | `n8n` (system-wide) | `n8n` or local script |
-| Best For | Quick setup, single instance | Multiple instances, testing, portable setups |
+The installer will guide you through:
+
+1. **System verification** - Checks Node.js and npm prerequisites
+2. **Installation type** - Choose global or folder-specific
+3. **Network configuration** - Set host and port
+4. **Installation** - Downloads and installs n8n
+5. **Setup completion** - Creates start script and documentation
 
 ## 🔧 Network Configuration
 
@@ -145,9 +136,12 @@ The installer allows you to configure:
 After installation, you'll have:
 
 - **n8n application** (globally or in your chosen folder)
-- **start_n8n.bat** - Configured start script
+- **start_n8n.bat** - Configured start script with network settings
 - **README.txt** - Complete installation documentation
-- **Data folder** - Your workflows, credentials, and settings
+- **Data folder** - Automatically created as `.n8n` subfolder on first run
+  - Global install: `%USERPROFILE%\.n8n\`
+  - Folder install: `<your-folder>\.n8n\`
+  - Contains: workflows, credentials, settings, and database
 
 ## 🎯 Usage
 

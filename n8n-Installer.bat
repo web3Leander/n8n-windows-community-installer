@@ -40,7 +40,7 @@ echo  ════════════════════════�
 echo      n8n Installation Wizard
 echo  ════════════════════════════════════════
 echo.
-echo  Step 1 of 5: Verifying System Requirements
+echo  Step 1 of 4: Verifying System Requirements
 echo  ────────────────────────────────────────
 echo.
 
@@ -146,156 +146,7 @@ if /i not "%CONTINUE%"=="Y" (
 
 cls
 
-REM Step 2: Choose installation mode
-:ASK_MODE
-cls
-echo.
-echo  ╔════════════════════════════════════════╗
-echo  ║     n8n Installation Wizard            ║
-echo  ╚════════════════════════════════════════╝
-echo.
-echo  Step 2 of 5: Choose Installation Mode
-echo  ──────────────────────────────────────────
-echo.
-echo  1. Quick Install (Recommended)
-echo     • Installs n8n globally with npm
-echo     • Data stored in: %USERPROFILE%\.n8n
-echo     • Simple and standard setup
-echo     • n8n command available system-wide
-echo.
-echo  2. Custom Installation
-echo     • Full control over installation location
-echo     • Choose between global or folder install
-echo     • Choose custom data directory
-echo     • Advanced configuration options
-echo.
-set /p "INSTALL_MODE=  Your choice (1 or 2): "
-
-if "%INSTALL_MODE%"=="1" goto QUICK_INSTALL
-if "%INSTALL_MODE%"=="2" goto CUSTOM_INSTALL
-echo.
-echo  ✗ Invalid choice. Please enter 1 or 2.
-echo.
-pause
-goto ASK_MODE
-
-:QUICK_INSTALL
-cls
-echo.
-echo  ╔════════════════════════════════════════╗
-echo  ║     n8n Installation Wizard            ║
-echo  ╚════════════════════════════════════════╝
-echo.
-echo  Step 3 of 5: Quick Install Configuration
-echo  ──────────────────────────────────────────
-echo.
-echo  Installation Details:
-echo  • Method: npm install -g n8n
-echo  • Location: Global (system-wide)
-echo  • Data Directory: %USERPROFILE%\.n8n
-echo  • Accessibility: n8n command available everywhere
-echo.
-echo  Network Configuration:
-echo  ──────────────────────────────────────────
-echo.
-echo  Configure the host and port for n8n to run on.
-echo.
-set /p "N8N_HOST_INPUT=  Host (press Enter for default 127.0.0.1): "
-if not defined N8N_HOST_INPUT set "N8N_HOST=127.0.0.1"
-if defined N8N_HOST_INPUT (
-    if "!N8N_HOST_INPUT!"=="" (
-        set "N8N_HOST=127.0.0.1"
-    ) else (
-        set "N8N_HOST=!N8N_HOST_INPUT!"
-    )
-)
-echo.
-set /p "N8N_PORT_INPUT=  Port (press Enter for default 5678): "
-if not defined N8N_PORT_INPUT set "N8N_PORT=5678"
-if defined N8N_PORT_INPUT (
-    if "!N8N_PORT_INPUT!"=="" (
-        set "N8N_PORT=5678"
-    ) else (
-        set "N8N_PORT=!N8N_PORT_INPUT!"
-    )
-)
-echo.
-echo  Access URL: http://!N8N_HOST!:!N8N_PORT!
-echo.
-set /p "CONFIRM_QUICK=  Proceed with quick install? (Y/N): "
-if /i not "!CONFIRM_QUICK!"=="Y" (
-    echo.
-    echo  Returning to installation mode selection...
-    timeout /t 2 /nobreak >nul
-    goto ASK_MODE
-)
-
-cls
-echo.
-echo  ╔════════════════════════════════════════╗
-echo  ║     n8n Installation Wizard            ║
-echo  ╚════════════════════════════════════════╝
-echo.
-echo  Step 4 of 5: Installing n8n
-echo  ──────────────────────────────────────────
-echo.
-echo  Running: npm install -g n8n
-echo  This may take a few minutes...
-echo.
-npm install -g n8n 2>&1
-echo.
-echo  Verifying installation...
-where n8n >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo  ✗ Installation failed! n8n command not found.
-    echo  Please check the error messages above.
-    pause
-    exit /b 1
-)
-
-for /f "tokens=*" %%i in ('n8n --version') do set N8N_VERSION=%%i
-
-REM Create start script for quick install
-set "QUICK_START_SCRIPT=%USERPROFILE%\.n8n\start_n8n.bat"
-if not exist "%USERPROFILE%\.n8n" mkdir "%USERPROFILE%\.n8n"
-(
-    echo @echo off
-    echo set N8N_USER_FOLDER=%USERPROFILE%\.n8n
-    echo set N8N_PORT=!N8N_PORT!
-    echo set N8N_PROTOCOL=http
-    echo set N8N_HOST=!N8N_HOST!
-    echo.
-    echo echo Starting n8n...
-    echo echo Access n8n at: http://!N8N_HOST!:!N8N_PORT!
-    echo echo.
-    echo n8n start
-) > "%QUICK_START_SCRIPT%"
-
-cls
-echo.
-echo  ╔════════════════════════════════════════╗
-echo  ║     n8n Installation Wizard            ║
-echo  ╚════════════════════════════════════════╝
-echo.
-echo  Step 5 of 5: Installation Complete!
-echo  ──────────────────────────────────────────
-echo.
-echo  ✓ n8n %N8N_VERSION% installed globally
-echo  ✓ n8n command available system-wide
-echo  ✓ Data will be stored in: %USERPROFILE%\.n8n
-echo  ✓ Start script: %QUICK_START_SCRIPT%
-echo  ✓ Access URL: http://!N8N_HOST!:!N8N_PORT!
-echo.
-echo  Next Steps:
-echo  1. Run: %QUICK_START_SCRIPT%
-echo  2. Or run 'n8n start' from any terminal
-echo  3. Open http://!N8N_HOST!:!N8N_PORT! in your browser
-echo  4. Create your first workflow
-echo.
-pause
-exit /b 0
-
+REM Step 2: Installation setup
 :CUSTOM_INSTALL
 cls
 echo.
@@ -303,7 +154,7 @@ echo  ════════════════════════�
 echo      n8n Installation Wizard
 echo  ════════════════════════════════════════
 echo.
-echo  Step 3 of 5: Custom Installation Setup
+echo  Step 2 of 4: Installation Setup
 echo  ────────────────────────────────────────
 echo.
 
@@ -371,7 +222,7 @@ if "%N8N_TYPE%"=="1" (
                 echo      n8n Installation Wizard
                 echo  ════════════════════════════════════════
                 echo.
-                echo  Step 3 of 5: Custom Installation Setup
+                echo  Step 2 of 4: Installation Setup
                 echo  ────────────────────────────────────────
                 echo.
                 goto ASK_N8N_TYPE
@@ -408,7 +259,7 @@ if "%N8N_TYPE%"=="1" (
             echo      n8n Installation Wizard
             echo  ════════════════════════════════════════
             echo.
-            echo  Step 3 of 5: Custom Installation Setup
+            echo  Step 2 of 4: Installation Setup
             echo  ────────────────────────────────────────
             echo.
             goto ASK_N8N_TYPE
@@ -424,7 +275,7 @@ if "%N8N_TYPE%"=="1" (
             echo      n8n Installation Wizard
             echo  ════════════════════════════════════════
             echo.
-            echo  Step 3 of 5: Custom Installation Setup
+            echo  Step 2 of 4: Installation Setup
             echo  ────────────────────────────────────────
             echo.
             goto ASK_N8N_TYPE
@@ -443,12 +294,22 @@ if "%N8N_TYPE%"=="1" (
     echo      n8n Installation Wizard
     echo  ════════════════════════════════════════
     echo.
-    echo  Step 3 of 5: Custom Installation Setup
+    echo  Step 2 of 4: Installation Setup
     echo  ────────────────────────────────────────
     echo.
     goto ASK_N8N_TYPE
 )
 
+REM Set data path based on installation type
+if "!N8N_INSTALL_TYPE!"=="GLOBAL" (
+    set "N8N_DATA_PATH=%USERPROFILE%\.n8n"
+) else (
+    set "N8N_DATA_PATH=!N8N_INSTALL_PATH!"
+)
+
+echo.
+echo  [i] n8n will store data at: !N8N_DATA_PATH!\.n8n\
+echo      (n8n automatically creates the .n8n subfolder)
 echo.
 set /p "CONFIRM_N8N=  Confirm choice? (Y/N): "
 if /i not "%CONFIRM_N8N%"=="Y" (
@@ -458,111 +319,10 @@ if /i not "%CONFIRM_N8N%"=="Y" (
     echo      n8n Installation Wizard
     echo  ════════════════════════════════════════
     echo.
-    echo  Step 3 of 5: Custom Installation Setup
+    echo  Step 2 of 4: Installation Setup
     echo  ────────────────────────────────────────
     echo.
     goto ASK_N8N_TYPE
-)
-
-REM Sub-step: Data directory
-echo.
-echo.
-:ASK_DATA_DIR
-echo  n8n Data Directory
-echo  ────────────────────────────────────────
-echo.
-echo  1. Use default data directory
-echo     • Location: %USERPROFILE%\.n8n
-echo     • Standard location for user data
-echo.
-echo  2. Choose custom data directory
-echo     • You specify the location
-echo     • Full control over data location
-echo.
-set /p "DATA_CHOICE=  Your choice (1 or 2): "
-
-if "%DATA_CHOICE%"=="1" (
-    set "N8N_DATA_PATH=%USERPROFILE%\.n8n"
-    echo.
-    echo  [✓] Selected: Default data directory
-    echo      Location: !N8N_DATA_PATH!
-) else if "%DATA_CHOICE%"=="2" (
-    echo.
-    echo  Enter the full path for n8n data directory.
-    echo.
-    echo  Example:  C:\tools\n8n\.n8n
-    echo        or  D:\data\n8n
-    echo.
-    set /p "N8N_DATA_PATH=  Path: "
-    if not exist "!N8N_DATA_PATH!" (
-        echo.
-        echo  [!] Folder does not exist: !N8N_DATA_PATH!
-        echo.
-        set /p "CREATE_DATA_DIR=  Create this folder? (Y/N): "
-        if /i not "!CREATE_DATA_DIR!"=="Y" (
-            echo.
-            echo  Please enter a valid folder path.
-            timeout /t 2 /nobreak >nul
-            cls
-            echo.
-            echo  ════════════════════════════════════════
-            echo      n8n Installation Wizard
-            echo  ════════════════════════════════════════
-            echo.
-            echo  Step 3 of 5: Custom Installation Setup
-            echo  ────────────────────────────────────────
-            echo.
-            goto ASK_DATA_DIR
-        )
-        mkdir "!N8N_DATA_PATH!" 2>nul
-        if !ERRORLEVEL! NEQ 0 (
-            echo.
-            echo  [✗] Could not create folder!
-            pause
-            cls
-            echo.
-            echo  ════════════════════════════════════════
-            echo      n8n Installation Wizard
-            echo  ════════════════════════════════════════
-            echo.
-            echo  Step 3 of 5: Custom Installation Setup
-            echo  ────────────────────────────────────────
-            echo.
-            goto ASK_DATA_DIR
-        )
-    )
-    echo.
-    echo  [✓] Selected: Custom data directory
-    echo      Location: !N8N_DATA_PATH!
-) else (
-    echo.
-    echo  [✗] Invalid choice. Please enter 1 or 2.
-    timeout /t 2 /nobreak >nul
-    cls
-    echo.
-    echo  ════════════════════════════════════════
-    echo      n8n Installation Wizard
-    echo  ════════════════════════════════════════
-    echo.
-    echo  Step 3 of 5: Custom Installation Setup
-    echo  ────────────────────────────────────────
-    echo.
-    goto ASK_DATA_DIR
-)
-
-echo.
-set /p "CONFIRM_DATA=  Confirm choice? (Y/N): "
-if /i not "%CONFIRM_DATA%"=="Y" (
-    cls
-    echo.
-    echo  ════════════════════════════════════════
-    echo      n8n Installation Wizard
-    echo  ════════════════════════════════════════
-    echo.
-    echo  Step 3 of 5: Custom Installation Setup
-    echo  ────────────────────────────────────────
-    echo.
-    goto ASK_DATA_DIR
 )
 
 REM Sub-step: Network Configuration
@@ -613,7 +373,7 @@ if /i not "!CONFIRM_NETWORK!"=="Y" (
     echo      n8n Installation Wizard
     echo  ════════════════════════════════════════
     echo.
-    echo  Step 3 of 5: Custom Installation Setup
+    echo  Step 2 of 4: Installation Setup
     echo  ────────────────────────────────────────
     echo.
     goto ASK_NETWORK_CONFIG
@@ -626,7 +386,7 @@ echo  ════════════════════════�
 echo      n8n Installation Wizard
 echo  ════════════════════════════════════════
 echo.
-echo  Step 3 of 5: Installation Summary
+echo  Step 2 of 4: Installation Summary
 echo  ────────────────────────────────────────
 echo.
 echo  n8n Installation: !N8N_INSTALL_TYPE!
@@ -639,7 +399,7 @@ echo.
 set /p "FINAL_CONFIRM=  Proceed with installation? (Y/N): "
 if /i not "!FINAL_CONFIRM!"=="Y" (
     echo.
-    echo Returning to custom installation setup...
+    echo Returning to Installation Setup...
     timeout /t 2 /nobreak >nul
     goto CUSTOM_INSTALL
 )
@@ -653,7 +413,7 @@ echo  ════════════════════════�
 echo      n8n Installation Wizard
 echo  ════════════════════════════════════════
 echo.
-echo  Step 4 of 5: Installing n8n
+echo  Step 3 of 4: Installing n8n
 echo  ────────────────────────────────────────
 echo.
 
@@ -810,7 +570,7 @@ echo Installation Details: >> "!README_FILE!"
 echo ───────────────────── >> "!README_FILE!"
 echo  Installation Type: !N8N_INSTALL_TYPE! >> "!README_FILE!"
 echo  Installation Path: !N8N_INSTALL_PATH! >> "!README_FILE!"
-echo  Data Directory:    !N8N_DATA_PATH! >> "!README_FILE!"
+echo  Data Directory:    !N8N_DATA_PATH!\.n8n (created on first run) >> "!README_FILE!"
 echo  Start Script:      !START_SCRIPT! >> "!README_FILE!"
 echo  Network Host:      !N8N_HOST! >> "!README_FILE!"
 echo  Network Port:      !N8N_PORT! >> "!README_FILE!"
@@ -847,8 +607,12 @@ echo  N8N_HOST:         !N8N_HOST! >> "!README_FILE!"
 echo  N8N_PORT:         !N8N_PORT! >> "!README_FILE!"
 echo  N8N_PROTOCOL:     http >> "!README_FILE!"
 echo. >> "!README_FILE!"
-echo  Your workflows, credentials, and settings are stored in the >> "!README_FILE!"
-echo  N8N_USER_FOLDER directory. >> "!README_FILE!"
+echo  IMPORTANT: n8n automatically creates a .n8n subfolder inside >> "!README_FILE!"
+echo  N8N_USER_FOLDER for storing all data. Your actual data will be at: >> "!README_FILE!"
+echo  !N8N_DATA_PATH!\.n8n\ >> "!README_FILE!"
+echo. >> "!README_FILE!"
+echo  This folder contains your workflows, credentials, settings, and >> "!README_FILE!"
+echo  database. It will be created automatically when you first run n8n. >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo  OFFICIAL n8n RESOURCES >> "!README_FILE!"
@@ -880,9 +644,10 @@ echo  • Edit start_n8n.bat and change N8N_PORT to a different port >> "!README
 echo  • Common alternatives: 3000, 5000, 8080 >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo  Need to move your data: >> "!README_FILE!"
-echo  • Copy the entire contents of: !N8N_DATA_PATH! >> "!README_FILE!"
-echo  • To your new location >> "!README_FILE!"
-echo  • Update N8N_USER_FOLDER in start_n8n.bat >> "!README_FILE!"
+echo  • Your data is stored in: !N8N_DATA_PATH!\.n8n\ >> "!README_FILE!"
+echo  • To move to a new location, copy the entire .n8n folder >> "!README_FILE!"
+echo  • Update N8N_USER_FOLDER in start_n8n.bat to the new base path >> "!README_FILE!"
+echo  • Do NOT include .n8n in the path - n8n adds it automatically >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo  For more help: >> "!README_FILE!"
 echo  • Visit the n8n community: https://community.n8n.io >> "!README_FILE!"
@@ -893,7 +658,7 @@ echo  SYSTEM INFORMATION >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo  Installation Date: %DATE% %TIME% >> "!README_FILE!"
-echo  Installer Version: 0.1 >> "!README_FILE!"
+echo  Installer Version: 0.1.1 >> "!README_FILE!"
 echo  Node.js Version:   Run 'node --version' to check >> "!README_FILE!"
 echo  npm Version:       Run 'npm --version' to check >> "!README_FILE!"
 echo. >> "!README_FILE!"
@@ -926,7 +691,7 @@ echo      n8n Installation Wizard
 echo      Installation Complete!
 echo  ════════════════════════════════════════════════════════
 echo.
-echo  Step 5 of 5: Installation Summary
+echo  Step 4 of 4: Installation Complete
 echo  ────────────────────────────────────────
 echo.
 if "!N8N_INSTALL_TYPE!"=="GLOBAL" (
