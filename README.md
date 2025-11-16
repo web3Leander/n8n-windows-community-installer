@@ -10,9 +10,10 @@ An unofficial, community-created installation wizard for [n8n](https://n8n.io) o
 **This is an UNOFFICIAL community-made installer and is NOT affiliated with, endorsed by, or connected to n8n.io or n8n GmbH in any way.**
 
 For official n8n support, please visit:
+- [n8n Official Website](https://n8n.io)
+- [n8n GitHub Repository](https://github.com/n8n-io/n8n)
 - [n8n Community Forum](https://community.n8n.io)
 - [n8n Documentation](https://docs.n8n.io)
-- [n8n Official Website](https://n8n.io)
 
 For issues with this installer, please open an issue in this repository.
 
