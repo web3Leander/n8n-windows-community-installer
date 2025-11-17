@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2025-11-17
+
+### Added
+- **Docker installation support** - Run n8n in Docker containers
+  - Docker Desktop detection in prerequisites check
+  - Docker as installation option #3 (alongside Global and Folder)
+  - Docker configuration prompts: container name (default: n8n), volume name (default: n8n_data), timezone (default: UTC), port (default: 5678)
+  - Automatic Docker volume creation for persistent data storage
+  - Automatic Docker image pull: `docker.n8n.io/n8nio/n8n`
+  - Container startup with proper environment variables and port mapping
+  - Complete Docker documentation in generated README.txt
+- Simplified network configuration for Docker installations (port-only, localhost assumed)
+
+### Changed
+- Prerequisites check now includes Docker status (optional)
+- Installation flow supports three installation types: Global, Folder, Docker
+- Network configuration adapts based on installation type
+- Generated README.txt includes Docker-specific commands and management instructions
+- Documentation updated with Docker installation option and usage
+- FAQ updated to reflect Docker support availability
+
+### Fixed
+- Fixed ERRORLEVEL checking in prerequisites to use delayed expansion (`!ERRORLEVEL!` instead of `%ERRORLEVEL%`)
+- Fixed duplicate port prompts in Docker installation flow
+
+### Technical Details
+- Docker image: `docker.n8n.io/n8nio/n8n` (official n8n image)
+- Environment variables: `GENERIC_TIMEZONE`, `TZ`, `N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS`, `N8N_RUNNERS_ENABLED`
+- Port mapping: User-specified host port → container port 5678
+- Data persistence: Docker volume mounted to `/home/node/.n8n` in container
+- Container verification after startup with 5-second initialization wait
+
 ## [0.1.1] - 2025-11-16
 
 ### Added

@@ -3,7 +3,7 @@
 An unofficial, community-created installation wizard for [n8n](https://n8n.io) on Windows systems.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
+[![Version](https://img.shields.io/badge/version-0.1.2-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
 
 ## ⚠️ IMPORTANT DISCLAIMER
 
@@ -47,8 +47,17 @@ This interactive installation wizard simplifies the process of installing n8n on
 - **Operating System:** Windows 10 or Windows 11 (64-bit)
 - **Node.js:** Version 18.x or later ([Download](https://nodejs.org/))
   - Recommended: Latest LTS version
+  - *Not required for Docker installation*
 - **npm:** Version 8.x or later (included with Node.js)
+  - *Not required for Docker installation*
 - **PowerShell:** 5.1 or later (included with Windows)
+
+### Optional
+
+- **Docker Desktop:** For Docker installation option ([Download](https://www.docker.com/products/docker-desktop))
+  - Provides isolated, containerized n8n installation
+  - Easier updates and backups
+  - Consistent environment across systems
 
 ### Recommended
 
@@ -84,6 +93,17 @@ Installs n8n in a specific folder:
 - No system-wide changes
 - Useful for testing or running multiple versions
 - Portable (can be moved/backed up easily)
+
+### Docker Installation
+
+Runs n8n in a Docker container:
+
+- Completely isolated and portable
+- Easy updates and backups
+- Consistent environment across systems
+- Requires Docker Desktop
+- Data stored in Docker volume
+- Simple container management scripts included
 
 ## 🎯 How It Works
 
@@ -135,6 +155,7 @@ The installer allows you to configure:
 
 After installation, you'll have:
 
+**For Global/Folder Installations:**
 - **n8n application** (globally or in your chosen folder)
 - **start_n8n.bat** - Configured start script with network settings
 - **README.txt** - Complete installation documentation
@@ -143,11 +164,17 @@ After installation, you'll have:
   - Folder install: `<your-folder>\.n8n\`
   - Contains: workflows, credentials, settings, and database
 
+**For Docker Installation:**
+- **Docker container** - Running n8n in an isolated environment
+- **Docker volume** - Persistent data storage for workflows and settings
+- **README.txt** - Complete installation documentation with Docker commands
+- Manage container via Docker Desktop or docker CLI commands
+
 ## 🎯 Usage
 
 ### Starting n8n
 
-After installation:
+**Global/Folder Installation:**
 
 1. **Using the start script:**
    ```
@@ -159,6 +186,16 @@ After installation:
    n8n start
    ```
 
+**Docker Installation:**
+
+1. **Using Docker Desktop:**
+   - Open Docker Desktop and start the n8n container
+
+2. **Using command line:**
+   ```bash
+   docker start n8n
+   ```
+
 3. **Access the web interface:**
    ```
    Open your browser to: http://localhost:5678
@@ -167,7 +204,9 @@ After installation:
 
 ### Stopping n8n
 
-Press `Ctrl+C` in the terminal window where n8n is running.
+**Native Installation:** Press `Ctrl+C` in the terminal window where n8n is running.
+
+**Docker Installation:** Use Docker Desktop or run `docker stop n8n`
 
 ## 🛠️ Troubleshooting
 
@@ -237,7 +276,7 @@ Yes! For folder installations, copy the entire installation folder and data dire
 <details>
 <summary><strong>Does this work with Docker?</strong></summary>
 
-Not yet, but Docker installation support is planned for a future release! For now, this installer handles native Windows installations only.
+Yes! Version 0.1.2 adds full Docker installation support. The installer can now create and configure n8n Docker containers with persistent data volumes. Choose the Docker installation option when running the installer (requires Docker Desktop).
 </details>
 
 <details>
@@ -261,10 +300,10 @@ This installer sets up n8n for you, but for production use, consider:
 
 We're actively working on enhancing this installer! Planned features include:
 
-- **Docker Installation Support** - Option to install and run n8n in Docker containers
 - **Update Manager** - Check for and install n8n updates directly from the installer
 - **Backup/Restore Tools** - Easy backup and restoration of your workflows and settings
 - **Port Validation** - Automatic port availability checking before installation
+- **Docker Volume Management** - Tools for backing up and restoring Docker volumes
 
 Have a feature request? [Open an issue](https://github.com/web3Leander/n8n-windows-community-installer/issues)!
 

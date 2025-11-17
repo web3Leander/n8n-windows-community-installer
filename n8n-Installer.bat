@@ -21,7 +21,7 @@ cls
 echo.
 echo  ══════════════════════════════════════════════════════════════
 echo      n8n Installation Wizard for Windows
-echo      Community Edition - Version 0.1
+echo      Community Edition - Version 0.1.2
 echo  ══════════════════════════════════════════════════════════════
 echo.
 echo  IMPORTANT NOTICE:
@@ -47,7 +47,7 @@ echo.
 REM Step 1: Check prerequisites
 echo  Checking Node.js...
 where node >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
+if !ERRORLEVEL! NEQ 0 (
     echo.
     echo  [✗] Node.js is not detected
     echo.
@@ -66,7 +66,7 @@ echo  [✓] Node.js %NODE_VERSION%
 echo.
 echo  Checking npm...
 where npm >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
+if !ERRORLEVEL! NEQ 0 (
     echo.
     echo  [✗] npm is not detected
     echo.
@@ -79,6 +79,23 @@ if %ERRORLEVEL% NEQ 0 (
 
 for /f "tokens=*" %%i in ('npm --version') do set NPM_VERSION=%%i
 echo  [✓] npm %NPM_VERSION%
+
+echo.
+echo  Checking Docker...
+where docker >nul 2>&1
+if !ERRORLEVEL! NEQ 0 (
+    set "DOCKER_AVAILABLE=NO"
+) else (
+    REM Check if Docker is running
+    docker ps >nul 2>&1
+    if !ERRORLEVEL! NEQ 0 (
+        set "DOCKER_AVAILABLE=NO"
+    ) else (
+        for /f "tokens=*" %%i in ('docker --version') do set DOCKER_VERSION=%%i
+        echo  [✓] !DOCKER_VERSION!
+        set "DOCKER_AVAILABLE=YES"
+    )
+)
 
 REM Check for updates (informational only)
 echo.
@@ -135,6 +152,11 @@ echo  ════════════════════════�
 echo.
 echo   Node.js: %NODE_VERSION%
 echo   npm:     %NPM_VERSION%
+if "%DOCKER_AVAILABLE%"=="YES" (
+    echo   Docker:  Available
+) else (
+    echo   Docker:  Not available ^(optional^)
+)
 echo.
 set /p "CONTINUE=  Ready to proceed? (Y/N): "
 if /i not "%CONTINUE%"=="Y" (
@@ -175,7 +197,19 @@ echo     • Completely isolated installation
 echo     • Won't affect global n8n installation
 echo     • Useful for testing or multiple versions
 echo.
-set /p "N8N_TYPE=  Your choice (1 or 2): "
+if "%DOCKER_AVAILABLE%"=="YES" (
+    echo  3. Docker Installation
+    echo     • Run n8n in a Docker container
+    echo     • Completely isolated and portable
+    echo     • Easy updates and backups
+    echo     • Requires Docker Desktop
+    echo.
+)
+if "%DOCKER_AVAILABLE%"=="YES" (
+    set /p "N8N_TYPE=  Your choice (1, 2, or 3): "
+) else (
+    set /p "N8N_TYPE=  Your choice (1 or 2): "
+)
 
 if "%N8N_TYPE%"=="1" (
     set "N8N_INSTALL_TYPE=GLOBAL"
@@ -284,9 +318,33 @@ if "%N8N_TYPE%"=="1" (
     echo.
     echo  [✓] Selected: Folder installation
     echo      Location: !N8N_INSTALL_PATH!
+) else if "%N8N_TYPE%"=="3" (
+    if not "%DOCKER_AVAILABLE%"=="YES" (
+        echo.
+        echo  [✗] Docker is not available. Please choose option 1 or 2.
+        timeout /t 2 /nobreak >nul
+        cls
+        echo.
+        echo  ════════════════════════════════════════
+        echo      n8n Installation Wizard
+        echo  ════════════════════════════════════════
+        echo.
+        echo  Step 2 of 4: Installation Setup
+        echo  ────────────────────────────────────────
+        echo.
+        goto ASK_N8N_TYPE
+    )
+    set "N8N_INSTALL_TYPE=DOCKER"
+    set "N8N_INSTALL_PATH=Docker Container"
+    echo.
+    echo  [✓] Selected: Docker installation
 ) else (
     echo.
-    echo  [✗] Invalid choice. Please enter 1 or 2.
+    if "%DOCKER_AVAILABLE%"=="YES" (
+        echo  [✗] Invalid choice. Please enter 1, 2, or 3.
+    ) else (
+        echo  [✗] Invalid choice. Please enter 1 or 2.
+    )
     timeout /t 2 /nobreak >nul
     cls
     echo.
@@ -325,6 +383,68 @@ if /i not "%CONFIRM_N8N%"=="Y" (
     goto ASK_N8N_TYPE
 )
 
+REM Sub-step: Docker Configuration (if Docker installation selected)
+if "%N8N_INSTALL_TYPE%"=="DOCKER" (
+    echo.
+    echo.
+    :ASK_DOCKER_CONFIG
+    echo  Docker Configuration
+    echo  ────────────────────────────────────────
+    echo.
+    echo  Configure Docker container settings.
+    echo.
+    
+    REM Container name
+    echo  Container Name:
+    echo  • Press Enter for default: n8n
+    echo  • Or enter a custom name (no spaces)
+    echo.
+    set /p "DOCKER_CONTAINER_INPUT=  Container name (default: n8n): "
+    if "!DOCKER_CONTAINER_INPUT!"=="" set "DOCKER_CONTAINER=n8n"
+    if defined DOCKER_CONTAINER_INPUT set "DOCKER_CONTAINER=!DOCKER_CONTAINER_INPUT!"
+    
+    echo.
+    REM Volume name
+    echo  Data Volume Name:
+    echo  • Press Enter for default: n8n_data
+    echo  • Or enter a custom volume name
+    echo.
+    set /p "DOCKER_VOLUME_INPUT=  Volume name (default: n8n_data): "
+    if "!DOCKER_VOLUME_INPUT!"=="" set "DOCKER_VOLUME=n8n_data"
+    if defined DOCKER_VOLUME_INPUT set "DOCKER_VOLUME=!DOCKER_VOLUME_INPUT!"
+    
+    echo.
+    REM Timezone
+    echo  Timezone:
+    echo  • Press Enter for default: UTC
+    echo  • Or enter your timezone (e.g., America/New_York, Europe/London)
+    echo  • See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+    echo.
+    set /p "DOCKER_TIMEZONE_INPUT=  Timezone (default: UTC): "
+    if "!DOCKER_TIMEZONE_INPUT!"=="" set "DOCKER_TIMEZONE=UTC"
+    if defined DOCKER_TIMEZONE_INPUT set "DOCKER_TIMEZONE=!DOCKER_TIMEZONE_INPUT!"
+    
+    echo.
+    echo  [✓] Docker Configuration:
+    echo      Container: !DOCKER_CONTAINER!
+    echo      Volume:    !DOCKER_VOLUME!
+    echo      Timezone:  !DOCKER_TIMEZONE!
+    echo.
+    set /p "CONFIRM_DOCKER=  Confirm Docker settings? (Y/N): "
+    if /i not "!CONFIRM_DOCKER!"=="Y" (
+        cls
+        echo.
+        echo  ════════════════════════════════════════
+        echo      n8n Installation Wizard
+        echo  ════════════════════════════════════════
+        echo.
+        echo  Step 2 of 4: Installation Setup
+        echo  ────────────────────────────────────────
+        echo.
+        goto ASK_DOCKER_CONFIG
+    )
+)
+
 REM Sub-step: Network Configuration
 echo.
 echo.
@@ -332,38 +452,60 @@ echo.
 echo  n8n Network Configuration
 echo  ────────────────────────────────────────
 echo.
+if "%N8N_INSTALL_TYPE%"=="DOCKER" (
+    echo  Configure the port for n8n to run on.
+    echo  Docker will map this port to the container.
+    echo.
+    echo  Port Number:
+    echo  • Press Enter for default: 5678
+    echo  • Or enter a custom port (1024-65535)
+    echo    Examples: 8080, 3000, 5000
+    echo.
+    set /p "N8N_PORT_INPUT=  Port (default: 5678): "
+    if "!N8N_PORT_INPUT!"=="" set "N8N_PORT=5678"
+    if defined N8N_PORT_INPUT set "N8N_PORT=!N8N_PORT_INPUT!"
+    
+    set "N8N_HOST=localhost"
+    
+    echo.
+    echo  [✓] Network Configuration:
+    echo      Port: !N8N_PORT!
+    echo      URL:  http://localhost:!N8N_PORT!
+    goto CONFIRM_NETWORK
+)
+
 echo  Configure the host and port for n8n to run on.
-echo.
-echo  Host/IP Address:
-echo  • Press Enter for default: 127.0.0.1 (localhost only)
-echo  • Or enter a custom IP address
-echo    Examples: 0.0.0.0 (all interfaces), 192.168.1.100 (specific local IP)
-echo.
-set /p "N8N_HOST_INPUT=  Host (default: 127.0.0.1): "
-if "!N8N_HOST_INPUT!"==" " set "N8N_HOST=127.0.0.1"
-if not defined N8N_HOST_INPUT set "N8N_HOST=127.0.0.1"
-if defined N8N_HOST_INPUT (
-    if not "!N8N_HOST_INPUT!"==" " set "N8N_HOST=!N8N_HOST_INPUT!"
-)
+    echo.
+    echo  Host/IP Address:
+    echo  • Press Enter for default: 127.0.0.1 (localhost only)
+    echo  • Or enter a custom IP address
+    echo    Examples: 0.0.0.0 (all interfaces), 192.168.1.100 (specific local IP)
+    echo.
+    set /p "N8N_HOST_INPUT=  Host (default: 127.0.0.1): "
+    if "!N8N_HOST_INPUT!"=="" set "N8N_HOST=127.0.0.1"
+    if defined N8N_HOST_INPUT (
+        if not "!N8N_HOST_INPUT!"=="" set "N8N_HOST=!N8N_HOST_INPUT!"
+    )
 
-echo.
-echo  Port Number:
-echo  • Press Enter for default: 5678
-echo  • Or enter a custom port (1024-65535)
-echo    Examples: 8080, 3000, 5000
-echo.
-set /p "N8N_PORT_INPUT=  Port (default: 5678): "
-if "!N8N_PORT_INPUT!"==" " set "N8N_PORT=5678"
-if not defined N8N_PORT_INPUT set "N8N_PORT=5678"
-if defined N8N_PORT_INPUT (
-    if not "!N8N_PORT_INPUT!"==" " set "N8N_PORT=!N8N_PORT_INPUT!"
-)
+    echo.
+    echo  Port Number:
+    echo  • Press Enter for default: 5678
+    echo  • Or enter a custom port (1024-65535)
+    echo    Examples: 8080, 3000, 5000
+    echo.
+    set /p "N8N_PORT_INPUT=  Port (default: 5678): "
+    if "!N8N_PORT_INPUT!"=="" set "N8N_PORT=5678"
+    if defined N8N_PORT_INPUT (
+        if not "!N8N_PORT_INPUT!"=="" set "N8N_PORT=!N8N_PORT_INPUT!"
+    )
 
-echo.
-echo  [✓] Network Configuration:
-echo      Host: !N8N_HOST!
-echo      Port: !N8N_PORT!
-echo      URL:  http://!N8N_HOST!:!N8N_PORT!
+    echo.
+    echo  [✓] Network Configuration:
+    echo      Host: !N8N_HOST!
+    echo      Port: !N8N_PORT!
+    echo      URL:  http://!N8N_HOST!:!N8N_PORT!
+
+:CONFIRM_NETWORK
 echo.
 set /p "CONFIRM_NETWORK=  Confirm network settings? (Y/N): "
 if /i not "!CONFIRM_NETWORK!"=="Y" (
@@ -417,21 +559,24 @@ echo  Step 3 of 4: Installing n8n
 echo  ────────────────────────────────────────
 echo.
 
-REM Ensure data directory exists
-if not exist "!N8N_DATA_PATH!" (
-    echo  Creating data directory...
-    mkdir "!N8N_DATA_PATH!" 2>nul
-    if !ERRORLEVEL! NEQ 0 (
-        echo  [✗] Could not create data directory: !N8N_DATA_PATH!
-        pause
-        exit /b 1
+REM Ensure data directory exists (not needed for Docker)
+if not "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    if not exist "!N8N_DATA_PATH!" (
+        echo  Creating data directory...
+        mkdir "!N8N_DATA_PATH!" 2>nul
+        if !ERRORLEVEL! NEQ 0 (
+            echo  [✗] Could not create data directory: !N8N_DATA_PATH!
+            pause
+            exit /b 1
+        )
+        echo  [✓] Data directory created
+        echo.
     )
-    echo  [✓] Data directory created
-    echo.
 )
 
 if "!N8N_INSTALL_TYPE!"=="GLOBAL" goto INSTALL_GLOBAL
 if "!N8N_INSTALL_TYPE!"=="FOLDER" goto INSTALL_FOLDER
+if "!N8N_INSTALL_TYPE!"=="DOCKER" goto INSTALL_DOCKER
 
 REM If we get here, something went wrong
 echo.
@@ -501,44 +646,102 @@ if !ERRORLEVEL! EQU 0 (
 )
 goto CREATE_START_SCRIPT
 
+:INSTALL_DOCKER
+echo  Creating Docker volume: !DOCKER_VOLUME!
+echo.
+docker volume create !DOCKER_VOLUME! 2>&1
+if !ERRORLEVEL! NEQ 0 (
+    echo.
+    echo  [✗] Failed to create Docker volume
+    pause
+    exit /b 1
+)
+echo  [✓] Docker volume created
+echo.
+
+echo  Pulling n8n Docker image...
+echo  This may take a few minutes...
+echo.
+docker pull docker.n8n.io/n8nio/n8n 2>&1
+if !ERRORLEVEL! NEQ 0 (
+    echo.
+    echo  [✗] Failed to pull n8n Docker image
+    pause
+    exit /b 1
+)
+echo  [✓] n8n Docker image downloaded
+echo.
+
+echo  Starting n8n container: !DOCKER_CONTAINER!
+echo.
+docker run -d --name !DOCKER_CONTAINER! -p !N8N_PORT!:5678 -e GENERIC_TIMEZONE="!DOCKER_TIMEZONE!" -e TZ="!DOCKER_TIMEZONE!" -e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true -e N8N_RUNNERS_ENABLED=true -v !DOCKER_VOLUME!:/home/node/.n8n docker.n8n.io/n8nio/n8n 2>&1
+if !ERRORLEVEL! NEQ 0 (
+    echo.
+    echo  [✗] Failed to start n8n container
+    echo  Note: If container already exists, run: docker rm !DOCKER_CONTAINER!
+    pause
+    exit /b 1
+)
+echo  [✓] n8n container started successfully
+echo.
+
+REM Wait a moment for container to start
+echo  Waiting for container to initialize...
+timeout /t 5 /nobreak >nul
+
+REM Verify container is running
+docker ps --filter name=!DOCKER_CONTAINER! --filter status=running | find "!DOCKER_CONTAINER!" >nul
+if !ERRORLEVEL! NEQ 0 (
+    echo.
+    echo  [!] Warning: Container may not be running properly
+    echo  Check logs with: docker logs !DOCKER_CONTAINER!
+)
+goto CREATE_START_SCRIPT
+
 :CREATE_START_SCRIPT
 REM Create start script and README
 echo.
 echo  Creating start script and documentation...
-set "START_SCRIPT=!N8N_INSTALL_PATH!\start_n8n.bat"
 
-if "!N8N_INSTALL_TYPE!"=="FOLDER" (
-    REM Folder installation - use npx
-    (
-        echo @echo off
-        echo set N8N_USER_FOLDER=!N8N_DATA_PATH!
-        echo set N8N_PORT=!N8N_PORT!
-        echo set N8N_PROTOCOL=http
-        echo set N8N_HOST=!N8N_HOST!
-        echo.
-        echo echo Starting n8n...
-        echo echo Access n8n at: http://!N8N_HOST!:!N8N_PORT!
-        echo echo.
-        echo cd /d "!N8N_INSTALL_PATH!"
-        echo npx n8n start
-    ) > "!START_SCRIPT!"
+if "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    REM Docker installation - no scripts needed, use Docker Desktop
+    set "N8N_INSTALL_PATH=%SCRIPTDIR%"
 ) else (
-    REM Global installation - direct command
-    (
-        echo @echo off
-        echo set N8N_USER_FOLDER=!N8N_DATA_PATH!
-        echo set N8N_PORT=!N8N_PORT!
-        echo set N8N_PROTOCOL=http
-        echo set N8N_HOST=!N8N_HOST!
-        echo.
-        echo echo Starting n8n...
-        echo echo Access n8n at: http://!N8N_HOST!:!N8N_PORT!
-        echo echo.
-        echo n8n start
-    ) > "!START_SCRIPT!"
-)
+    set "START_SCRIPT=!N8N_INSTALL_PATH!\start_n8n.bat"
 
-echo  [✓] Start script created: !START_SCRIPT!
+    if "!N8N_INSTALL_TYPE!"=="FOLDER" (
+        REM Folder installation - use npx
+        (
+            echo @echo off
+            echo set N8N_USER_FOLDER=!N8N_DATA_PATH!
+            echo set N8N_PORT=!N8N_PORT!
+            echo set N8N_PROTOCOL=http
+            echo set N8N_HOST=!N8N_HOST!
+            echo.
+            echo echo Starting n8n...
+            echo echo Access n8n at: http://!N8N_HOST!:!N8N_PORT!
+            echo echo.
+            echo cd /d "!N8N_INSTALL_PATH!"
+            echo npx n8n start
+        ) > "!START_SCRIPT!"
+    ) else (
+        REM Global installation - direct command
+        (
+            echo @echo off
+            echo set N8N_USER_FOLDER=!N8N_DATA_PATH!
+            echo set N8N_PORT=!N8N_PORT!
+            echo set N8N_PROTOCOL=http
+            echo set N8N_HOST=!N8N_HOST!
+            echo.
+            echo echo Starting n8n...
+            echo echo Access n8n at: http://!N8N_HOST!:!N8N_PORT!
+            echo echo.
+            echo n8n start
+        ) > "!START_SCRIPT!"
+    )
+
+    echo  [✓] Start script created: !START_SCRIPT!
+)
 
 REM Create README file
 echo.
@@ -569,22 +772,53 @@ echo. >> "!README_FILE!"
 echo Installation Details: >> "!README_FILE!"
 echo ───────────────────── >> "!README_FILE!"
 echo  Installation Type: !N8N_INSTALL_TYPE! >> "!README_FILE!"
-echo  Installation Path: !N8N_INSTALL_PATH! >> "!README_FILE!"
-echo  Data Directory:    !N8N_DATA_PATH!\.n8n (created on first run) >> "!README_FILE!"
-echo  Start Script:      !START_SCRIPT! >> "!README_FILE!"
-echo  Network Host:      !N8N_HOST! >> "!README_FILE!"
-echo  Network Port:      !N8N_PORT! >> "!README_FILE!"
+if "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    echo  Container Name:    !DOCKER_CONTAINER! >> "!README_FILE!"
+    echo  Docker Volume:     !DOCKER_VOLUME! >> "!README_FILE!"
+    echo  Timezone:          !DOCKER_TIMEZONE! >> "!README_FILE!"
+    echo  Network Port:      !N8N_PORT! >> "!README_FILE!"
+) else (
+    echo  Installation Path: !N8N_INSTALL_PATH! >> "!README_FILE!"
+    echo  Data Directory:    !N8N_DATA_PATH!\.n8n (created on first run) >> "!README_FILE!"
+    echo  Start Script:      !START_SCRIPT! >> "!README_FILE!"
+    echo  Network Host:      !N8N_HOST! >> "!README_FILE!"
+    echo  Network Port:      !N8N_PORT! >> "!README_FILE!"
+)
 echo  Installation Date: %DATE% %TIME% >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo  QUICK START GUIDE >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo. >> "!README_FILE!"
-echo  1. Double-click or run: !START_SCRIPT! >> "!README_FILE!"
-echo  2. Wait for n8n to start (you'll see "Editor is now accessible") >> "!README_FILE!"
-echo  3. Open your browser to: http://!N8N_HOST!:!N8N_PORT! >> "!README_FILE!"
-echo  4. Follow the setup wizard to create your account >> "!README_FILE!"
-echo  5. Start building your first workflow! >> "!README_FILE!"
+if "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    echo  Managing Your n8n Docker Container: >> "!README_FILE!"
+    echo  ───────────────────────────────── >> "!README_FILE!"
+    echo  • Start:   docker start !DOCKER_CONTAINER! >> "!README_FILE!"
+    echo  • Stop:    docker stop !DOCKER_CONTAINER! >> "!README_FILE!"
+    echo  • Restart: docker restart !DOCKER_CONTAINER! >> "!README_FILE!"
+    echo  • Or use Docker Desktop to manage the container >> "!README_FILE!"
+    echo. >> "!README_FILE!"
+    echo  Accessing n8n: >> "!README_FILE!"
+    echo  ───────────── >> "!README_FILE!"
+    echo  1. Make sure the container is running >> "!README_FILE!"
+    echo  2. Open your browser to: http://localhost:!N8N_PORT! >> "!README_FILE!"
+    echo  3. Follow the setup wizard to create your account >> "!README_FILE!"
+    echo  4. Start building your first workflow! >> "!README_FILE!"
+    echo. >> "!README_FILE!"
+    echo  Useful Docker Commands: >> "!README_FILE!"
+    echo  ────────────────────── >> "!README_FILE!"
+    echo  • View container status: docker ps -a >> "!README_FILE!"
+    echo  • View logs:             docker logs -f !DOCKER_CONTAINER! >> "!README_FILE!"
+    echo  • Access container:      docker exec -it !DOCKER_CONTAINER! sh >> "!README_FILE!"
+    echo  • Remove container:      docker rm -f !DOCKER_CONTAINER! >> "!README_FILE!"
+    echo  • Backup data volume:    docker volume inspect !DOCKER_VOLUME! >> "!README_FILE!"
+) else (
+    echo  1. Double-click or run: !START_SCRIPT! >> "!README_FILE!"
+    echo  2. Wait for n8n to start (you'll see "Editor is now accessible") >> "!README_FILE!"
+    echo  3. Open your browser to: http://!N8N_HOST!:!N8N_PORT! >> "!README_FILE!"
+    echo  4. Follow the setup wizard to create your account >> "!README_FILE!"
+    echo  5. Start building your first workflow! >> "!README_FILE!"
+)
 echo. >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo  USEFUL COMMANDS >> "!README_FILE!"
@@ -694,7 +928,12 @@ echo.
 echo  Step 4 of 4: Installation Complete
 echo  ────────────────────────────────────────
 echo.
-if "!N8N_INSTALL_TYPE!"=="GLOBAL" (
+if "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    echo  [✓] n8n installed to: Docker Container
+    echo  [✓] Container name: !DOCKER_CONTAINER!
+    echo  [✓] Data volume: !DOCKER_VOLUME!
+    echo  [✓] README file: !N8N_INSTALL_PATH!\README.txt
+) else if "!N8N_INSTALL_TYPE!"=="GLOBAL" (
     for /f "tokens=*" %%i in ('n8n --version 2^>nul') do set N8N_VERSION=%%i
     if defined N8N_VERSION (
         echo  [✓] n8n !N8N_VERSION! installed globally
@@ -706,9 +945,11 @@ if "!N8N_INSTALL_TYPE!"=="GLOBAL" (
     echo  [✓] n8n installed to: !N8N_INSTALL_PATH!
     echo  [✓] Restart terminal for PATH changes
 )
-echo  [✓] Data directory: !N8N_DATA_PATH!
-echo  [✓] Start script: !START_SCRIPT!
-echo  [✓] README file: !N8N_INSTALL_PATH!\README.txt
+if not "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    echo  [✓] Data directory: !N8N_DATA_PATH!
+    echo  [✓] Start script: !START_SCRIPT!
+    echo  [✓] README file: !N8N_INSTALL_PATH!\README.txt
+)
 echo.
 echo  ────────────────────────────────────────
 echo.
@@ -723,16 +964,26 @@ echo.
 echo  ────────────────────────────────────────
 echo.
 echo  Next Steps:
-if "!N8N_INSTALL_TYPE!"=="FOLDER" (
+if "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    echo  1. Container is running - manage via Docker Desktop
+    echo  2. Open http://localhost:!N8N_PORT! in your browser
+    echo  3. Create your first workflow
+) else if "!N8N_INSTALL_TYPE!"=="FOLDER" (
     echo  1. Close and reopen your terminal
     echo  2. Run: !START_SCRIPT!
+    echo  3. Open http://!N8N_HOST!:!N8N_PORT! in your browser
+    echo  4. Create your first workflow
 ) else (
     echo  1. Run: !START_SCRIPT!
+    echo  2. Open http://!N8N_HOST!:!N8N_PORT! in your browser
+    echo  3. Create your first workflow
 )
-echo  3. Open http://!N8N_HOST!:!N8N_PORT! in your browser
-echo  4. Create your first workflow
 echo.
 echo  For more information, see README.txt in the installation folder
 echo.
 pause
+exit /b 0
+
+REM Helper function to clear ERRORLEVEL
+:CLEAR_ERROR
 exit /b 0
