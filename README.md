@@ -10,6 +10,7 @@ An unofficial, community-created installation wizard for [n8n](https://n8n.io) o
 **This is an UNOFFICIAL community-made installer and is NOT affiliated with, endorsed by, or connected to n8n.io or n8n GmbH in any way.**
 
 For official n8n support, please visit:
+
 - [n8n Official Website](https://n8n.io)
 - [n8n GitHub Repository](https://github.com/n8n-io/n8n)
 - [n8n Community Forum](https://community.n8n.io)
@@ -156,15 +157,52 @@ The installer allows you to configure:
 After installation, you'll have:
 
 **For Global/Folder Installations:**
+
 - **n8n application** (globally or in your chosen folder)
 - **start_n8n.bat** - Configured start script with network settings
 - **README.txt** - Complete installation documentation
 - **Data folder** - Automatically created as `.n8n` subfolder on first run
   - Global install: `%USERPROFILE%\.n8n\`
   - Folder install: `<your-folder>\.n8n\`
-  - Contains: workflows, credentials, settings, and database
+  - Contains: workflows, credentials, settings, database, and encryption key
+
+### ⚠️ CRITICAL: Backup Your Encryption Key
+
+**IMPORTANT:** On first startup, n8n automatically generates an encryption key that is used to secure your credentials and sensitive data. This key is stored in your `.n8n` folder.
+
+**Why this matters:**
+
+- Your workflows and credentials are encrypted with this key
+- Without this key, you **CANNOT** recover your data after reinstalling
+- If you lose the encryption key, your workflows and credentials are permanently lost
+
+**How to protect your data:**
+
+1. **Backup the entire `.n8n` folder regularly:**
+
+   ```text
+   Global install: %USERPROFILE%\.n8n\
+   Folder install: <your-installation-folder>\.n8n\
+   ```
+
+2. **To restore after reinstallation:**
+   - Install n8n to the same location (or update paths in start_n8n.bat)
+   - **Before starting n8n for the first time**, copy your backed-up `.n8n` folder
+   - This preserves your encryption key, workflows, and all data
+
+3. **What to backup:**
+   - The entire `.n8n` folder (contains everything you need)
+   - Your `start_n8n.bat` script (for configuration reference)
+
+**Best Practice:** Create backups before:
+
+- Upgrading n8n
+- Changing installation locations
+- Major system updates
+- Moving to a new computer
 
 **For Docker Installation:**
+
 - **Docker container** - Running n8n in an isolated environment
 - **Docker volume** - Persistent data storage for workflows and settings
 - **README.txt** - Complete installation documentation with Docker commands
@@ -177,12 +215,14 @@ After installation, you'll have:
 **Global/Folder Installation:**
 
 1. **Using the start script:**
-   ```
+
+   ```batch
    Double-click start_n8n.bat
    ```
 
 2. **Using command line** (global install):
-   ```
+
+   ```bash
    n8n start
    ```
 
@@ -192,12 +232,14 @@ After installation, you'll have:
    - Open Docker Desktop and start the n8n container
 
 2. **Using command line:**
+
    ```bash
    docker start n8n
    ```
 
 3. **Access the web interface:**
-   ```
+
+   ```text
    Open your browser to: http://localhost:5678
    (or your configured host:port)
    ```
@@ -211,16 +253,19 @@ After installation, you'll have:
 ## 🛠️ Troubleshooting
 
 ### n8n won't start
+
 - Check that your configured port is not already in use
 - Try running: `netstat -ano | findstr :5678` (replace 5678 with your port)
 - Verify Node.js is properly installed: `node --version`
 
 ### Can't access web interface
+
 - Ensure n8n is running (check the terminal window)
 - Try accessing: `http://localhost:5678`
 - Check Windows Firewall settings if using non-localhost IP
 
 ### Port already in use
+
 - Edit `start_n8n.bat` and change `N8N_PORT` to a different port
 - Common alternatives: 3000, 5000, 8080
 
@@ -228,73 +273,88 @@ For more help, visit the [n8n Community Forum](https://community.n8n.io)
 
 ## ❓ Frequently Asked Questions
 
-<details>
-<summary><strong>Can I run multiple n8n instances?</strong></summary>
+### Can I run multiple n8n instances?
 
 Yes! Use the Custom Install option with folder-specific installations. Install each instance to a different folder with different ports, and each will run independently with its own data.
-</details>
 
-<details>
-<summary><strong>How do I uninstall n8n?</strong></summary>
+### How do I uninstall n8n?
 
 **Global Installation:**
+
 ```bash
 npm uninstall -g n8n
 ```
+
 Then delete your data directory (default: `%USERPROFILE%\.n8n`)
 
 **Folder Installation:**
+
 Simply delete the installation folder. To clean up PATH, run:
+
 ```bash
 setx PATH "%PATH:;C:\your\n8n\folder\node_modules\.bin=%"
 ```
-</details>
 
-<details>
-<summary><strong>How do I upgrade n8n?</strong></summary>
+### How do I upgrade n8n?
 
 **Global Installation:**
+
 ```bash
 npm install -g n8n@latest
 ```
 
 **Folder Installation:**
+
 Navigate to your installation folder and run:
+
 ```bash
 npm install n8n@latest
 ```
 
 Your data (workflows, credentials) will be preserved.
-</details>
 
-<details>
-<summary><strong>Can I move my installation to another computer?</strong></summary>
+### Can I move my installation to another computer?
 
-Yes! For folder installations, copy the entire installation folder and data directory. Update the paths in `start_n8n.bat`. For global installations, you'll need to reinstall globally on the new machine and copy over your data directory.
-</details>
+**Yes!** For folder installations:
 
-<details>
-<summary><strong>Does this work with Docker?</strong></summary>
+1. **Copy your entire installation folder** including the `.n8n` subfolder
+2. **Install n8n on the new computer** to the same folder path (or update paths in `start_n8n.bat`)
+3. **Replace the new `.n8n` folder** with your backed-up `.n8n` folder
+4. This preserves your encryption key, workflows, credentials, and all settings
+
+For global installations:
+
+1. **Reinstall n8n globally** on the new machine: `npm install -g n8n`
+2. **Copy your backed-up `.n8n` folder** to `%USERPROFILE%\.n8n` on the new machine
+3. Run n8n and all your workflows will be there
+
+**Important:** The `.n8n` folder contains your encryption key - without it, your data cannot be decrypted!
+
+### Does this work with Docker?
 
 Yes! Version 0.1.2 adds full Docker installation support. The installer can now create and configure n8n Docker containers with persistent data volumes. Choose the Docker installation option when running the installer (requires Docker Desktop).
-</details>
 
-<details>
-<summary><strong>Is my data safe?</strong></summary>
+### Is my data safe?
 
-Yes! All your workflows, credentials, and settings are stored locally in your data directory. This installer doesn't send any data anywhere. Always backup your data directory before major updates.
-</details>
+**Yes!** All your workflows, credentials, and settings are stored locally in your `.n8n` data directory. This installer doesn't send any data anywhere.
 
-<details>
-<summary><strong>Can I use this in a production environment?</strong></summary>
+**Important:** Your data is encrypted with an auto-generated encryption key. Always backup your entire `.n8n` folder before:
+
+- Major updates or upgrades
+- Moving installations
+- System changes or reinstalls
+
+Without the encryption key (stored in `.n8n`), your data cannot be recovered!
+
+### Can I use this in a production environment?
 
 This installer sets up n8n for you, but for production use, consider:
+
 - Using a process manager (PM2, NSSM)
 - Setting up automatic backups
 - Configuring HTTPS with proper certificates
 - Using authentication and proper security measures
 - Reviewing n8n's official production setup guide
-</details>
 
 ## 🚀 Upcoming Features
 
@@ -340,4 +400,4 @@ Created by [web3Leander](https://github.com/web3Leander)
 
 ---
 
-**Made with ❤️ for the n8n community**
+Made with ❤️ for the n8n community
