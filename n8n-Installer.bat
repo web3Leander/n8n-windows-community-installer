@@ -21,7 +21,7 @@ cls
 echo.
 echo  ══════════════════════════════════════════════════════════════
 echo      n8n Installation Wizard for Windows
-echo      Community Edition - Version 0.1.3
+echo      Community Edition - Version 0.1.4
 echo  ══════════════════════════════════════════════════════════════
 echo.
 echo  IMPORTANT NOTICE:
@@ -668,6 +668,61 @@ if /i not "!CONFIRM_NETWORK!"=="Y" (
     goto ASK_NETWORK_CONFIG
 )
 
+REM Auto-update option (not for Docker - Docker has its own update mechanism)
+if not "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    echo.
+    echo.
+    echo  Auto-Update Configuration
+    echo  ────────────────────────────────────────
+    echo.
+    echo  Would you like start_n8n.bat to check for updates?
+    echo  • Each time you start n8n, it will check for newer versions
+    echo  • You will be prompted before any update is installed
+    echo.
+    set /p "ENABLE_AUTO_UPDATE=  Enable auto-update check? (Y/N, default: N): "
+    if /i "!ENABLE_AUTO_UPDATE!"=="Y" (
+        set "AUTO_UPDATE=YES"
+        echo.
+        echo  [✓] Auto-update check enabled
+    ) else (
+        set "AUTO_UPDATE=NO"
+        echo.
+        echo  [✓] Auto-update check disabled
+    )
+)
+
+REM Desktop shortcut option (not for Docker)
+set "CREATE_SHORTCUT=NO"
+set "SHORTCUT_PATH="
+if not "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    echo.
+    echo.
+    echo  Desktop Shortcut
+    echo  ────────────────────────────────────────
+    echo.
+    echo  Create a desktop shortcut for start_n8n.bat?
+    echo.
+    echo    [1] Current user only ^(%USERNAME%^)
+    echo    [2] All users ^(Public Desktop^)
+    echo    [N] No shortcut
+    echo.
+    set /p "SHORTCUT_CHOICE=  Your choice (1/2/N, default: N): "
+    if "!SHORTCUT_CHOICE!"=="1" (
+        set "CREATE_SHORTCUT=YES"
+        set "SHORTCUT_PATH=%USERPROFILE%\Desktop"
+        echo.
+        echo  [✓] Shortcut will be created for %USERNAME%
+    ) else if "!SHORTCUT_CHOICE!"=="2" (
+        set "CREATE_SHORTCUT=YES"
+        set "SHORTCUT_PATH=%PUBLIC%\Desktop"
+        echo.
+        echo  [✓] Shortcut will be created for all users
+    ) else (
+        echo.
+        echo  [✓] No shortcut will be created
+    )
+)
+
 REM Final confirmation
 cls
 echo.
@@ -684,6 +739,10 @@ echo  Data Directory: !N8N_DATA_PATH!
 echo  Host: !N8N_HOST!
 echo  Port: !N8N_PORT!
 echo  Access URL: http://!N8N_HOST!:!N8N_PORT!
+if not "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    echo  Auto-Update Check: !AUTO_UPDATE!
+    echo  Desktop Shortcut: !CREATE_SHORTCUT!
+)
 echo.
 set /p "FINAL_CONFIRM=  Proceed with installation? (Y/N): "
 if /i not "!FINAL_CONFIRM!"=="Y" (
@@ -737,7 +796,7 @@ exit /b 1
 echo  Running: npm install -g n8n
 echo  This may take a few minutes...
 echo.
-call npm install -g n8n 2>&1
+call npm install -g n8n
 echo.
 echo  Verifying installation...
 where n8n >nul 2>&1
@@ -762,13 +821,13 @@ if !ERRORLEVEL! NEQ 0 (
     pause
     exit /b 1
 )
-call npm install n8n 2>&1
+call npm install n8n
 echo.
 echo  Verifying installation...
 if not exist "!N8N_INSTALL_PATH!\node_modules\n8n" (
     echo.
     echo  [✗] Installation failed! n8n not found in node_modules.
-    echo  Please check the error messages above.
+    echo  Please check the error messages above or review: !LOG_FILE!
     pause
     exit /b 1
 )
@@ -860,26 +919,73 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
         REM Folder installation - use npx
         (
             echo @echo off
+            echo setlocal enabledelayedexpansion
             echo set N8N_USER_FOLDER=!N8N_DATA_PATH!
             echo set N8N_PORT=!N8N_PORT!
             echo set N8N_PROTOCOL=http
             echo set N8N_HOST=!N8N_HOST!
             echo.
+            echo cd /d "!N8N_INSTALL_PATH!"
+            if "!AUTO_UPDATE!"=="YES" (
+                echo.
+                echo echo Checking for n8n updates...
+                echo for /f "tokens=*" %%%%i in ^('npm view n8n version 2^^^>nul'^) do set LATEST=%%%%i
+                echo for /f "tokens=*" %%%%i in ^('npx n8n --version 2^^^>nul'^) do set CURRENT=%%%%i
+                echo if not "^^!CURRENT^^!"=="^^!LATEST^^!" ^(
+                echo     echo.
+                echo     echo   Update available: ^^!CURRENT^^! -^^^> ^^!LATEST^^!
+                echo     echo.
+                echo     set /p "DO_UPDATE=  Update now? [Y/N]: "
+                echo     if /i "^^!DO_UPDATE^^!"=="Y" ^(
+                echo         echo.
+                echo         echo   Updating n8n...
+                echo         npm update n8n
+                echo         echo.
+                echo         echo   [OK] Update complete
+                echo         echo.
+                echo     ^)
+                echo ^) else ^(
+                echo     echo   [OK] n8n is up to date [v^^!CURRENT^^!]
+                echo ^)
+                echo echo.
+            )
             echo echo Starting n8n...
             echo echo Access n8n at: http://!N8N_HOST!:!N8N_PORT!
             echo echo.
-            echo cd /d "!N8N_INSTALL_PATH!"
             echo npx n8n start
         ) > "!START_SCRIPT!"
     ) else (
         REM Global installation - direct command
         (
             echo @echo off
+            echo setlocal enabledelayedexpansion
             echo set N8N_USER_FOLDER=!N8N_DATA_PATH!
             echo set N8N_PORT=!N8N_PORT!
             echo set N8N_PROTOCOL=http
             echo set N8N_HOST=!N8N_HOST!
             echo.
+            if "!AUTO_UPDATE!"=="YES" (
+                echo echo Checking for n8n updates...
+                echo for /f "tokens=*" %%%%i in ^('npm view n8n version 2^^^>nul'^) do set LATEST=%%%%i
+                echo for /f "tokens=*" %%%%i in ^('n8n --version 2^^^>nul'^) do set CURRENT=%%%%i
+                echo if not "^^!CURRENT^^!"=="^^!LATEST^^!" ^(
+                echo     echo.
+                echo     echo   Update available: ^^!CURRENT^^! -^^^> ^^!LATEST^^!
+                echo     echo.
+                echo     set /p "DO_UPDATE=  Update now? [Y/N]: "
+                echo     if /i "^^!DO_UPDATE^^!"=="Y" ^(
+                echo         echo.
+                echo         echo   Updating n8n globally...
+                echo         npm update -g n8n
+                echo         echo.
+                echo         echo   [OK] Update complete
+                echo         echo.
+                echo     ^)
+                echo ^) else ^(
+                echo     echo   [OK] n8n is up to date [v^^!CURRENT^^!]
+                echo ^)
+                echo echo.
+            )
             echo echo Starting n8n...
             echo echo Access n8n at: http://!N8N_HOST!:!N8N_PORT!
             echo echo.
@@ -887,7 +993,23 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
         ) > "!START_SCRIPT!"
     )
 
-    echo  [✓] Start script created: !START_SCRIPT!
+    echo  [OK] Start script created: !START_SCRIPT!
+)
+
+REM Create desktop shortcut if requested
+if "!CREATE_SHORTCUT!"=="YES" (
+    echo.
+    echo  Creating desktop shortcut...
+    set "SHORTCUT_FILE=!SHORTCUT_PATH!\Start n8n.lnk"
+    
+    REM Use PowerShell to create the shortcut
+    powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('!SHORTCUT_FILE!'); $s.TargetPath = '!START_SCRIPT!'; $s.WorkingDirectory = '!N8N_INSTALL_PATH!'; $s.Description = 'Start n8n Workflow Automation'; $s.Save()" 2>nul
+    
+    if exist "!SHORTCUT_FILE!" (
+        echo  [OK] Desktop shortcut created: !SHORTCUT_FILE!
+    ) else (
+        echo  [!] Could not create desktop shortcut
+    )
 )
 
 REM Create README file
@@ -1039,7 +1161,7 @@ echo  SYSTEM INFORMATION >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo  Installation Date: %DATE% %TIME% >> "!README_FILE!"
-echo  Installer Version: 0.1.3 >> "!README_FILE!"
+echo  Installer Version: 0.1.4 >> "!README_FILE!"
 echo  Node.js Version:   Run 'node --version' to check >> "!README_FILE!"
 echo  npm Version:       Run 'npm --version' to check >> "!README_FILE!"
 echo. >> "!README_FILE!"

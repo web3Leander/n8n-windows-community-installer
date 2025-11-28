@@ -3,7 +3,7 @@
 An unofficial, community-created installation wizard for [n8n](https://n8n.io) on Windows systems.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.3-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
+[![Version](https://img.shields.io/badge/version-0.1.4-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
 
 ## ⚠️ IMPORTANT DISCLAIMER
 
@@ -34,6 +34,17 @@ This interactive installation wizard simplifies the process of installing n8n on
   - Port 5678 availability detection
   - Disk space verification on target drive (1.2GB+ required)
   - Existing installation detection with overwrite confirmation
+
+- **Auto-Update Check:**
+  - Optional update checking on each n8n start
+  - Compares installed version with latest available
+  - Prompts before installing updates
+  - Supports both global and folder installations
+
+- **Desktop Shortcut:**
+  - Optional desktop shortcut creation for quick access
+  - Choose between current user or all users
+  - Creates proper Windows .lnk shortcut
 
 - **Streamlined Installation:**
   - Automatic data directory configuration

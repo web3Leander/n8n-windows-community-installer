@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2025-11-28
+
+### Added
+
+- **Auto-update check option** for start scripts:
+  - Optional prompt during installation to enable update checking
+  - start_n8n.bat checks for newer n8n versions on each launch
+  - Prompts user before installing updates (Y/N confirmation)
+  - Supports both global (`npm update -g n8n`) and folder (`npm update n8n`) installations
+  - Docker excluded (uses its own update mechanism)
+- **Desktop shortcut creation**:
+  - Optional prompt to create desktop shortcut for start_n8n.bat
+  - Choice between current user only or all users (Public Desktop)
+  - Uses PowerShell to create proper Windows .lnk shortcut
+
+### Fixed
+
+- Fixed encoding issue with checkmark characters in generated start scripts
+  - Replaced UTF-8 `✓` with ASCII-safe `[OK]` for batch file compatibility
+- Fixed missing closing parenthesis in auto-update version display
+
+### Changed
+
+- Version display in auto-update now uses square brackets `[v1.x.x]` for reliable escaping
+
 ## [0.1.3] - 2025-11-28
 
 ### Added
