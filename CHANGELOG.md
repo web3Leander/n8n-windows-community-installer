@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2025-11-28
+
+### Changed
+
+- **Docker timezone auto-detection**: Removed manual timezone prompt, now automatically detects system timezone from Windows and converts to IANA format for Docker
+  - Supports 18 common timezone mappings (US, Europe, Asia, Australia, NZ)
+  - Falls back to UTC for unmapped timezones
+  - One less prompt during Docker installation
+
+### Fixed
+
+- **Global installation path fix**: Start scripts now correctly saved to `%USERPROFILE%\n8n` folder instead of invalid path
+- **Docker disk space check**: Skipped for Docker installations (not applicable since data stored in Docker volume)
+- **Docker data path display**: Now shows "n8n data will be stored in Docker volume" instead of invalid path message
+
 ## [0.1.4] - 2025-11-28
 
 ### Added

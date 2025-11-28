@@ -21,7 +21,7 @@ cls
 echo.
 echo  ══════════════════════════════════════════════════════════════
 echo      n8n Installation Wizard for Windows
-echo      Community Edition - Version 0.1.4
+echo      Community Edition - Version 0.1.5
 echo  ══════════════════════════════════════════════════════════════
 echo.
 echo  IMPORTANT NOTICE:
@@ -424,12 +424,16 @@ REM Set data path based on installation type
 if "!N8N_INSTALL_TYPE!"=="GLOBAL" (
     set "N8N_DATA_PATH=%USERPROFILE%\.n8n"
     set "TARGET_DRIVE=%SYSTEMDRIVE%"
+) else if "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    set "N8N_DATA_PATH=Docker Volume"
+    set "TARGET_DRIVE="
 ) else (
     set "N8N_DATA_PATH=!N8N_INSTALL_PATH!"
     set "TARGET_DRIVE=!N8N_INSTALL_PATH:~0,2!"
 )
 
-REM Check disk space on target drive (need at least 1.2GB)
+REM Check disk space on target drive (need at least 1.2GB) - skip for Docker
+if not "!N8N_INSTALL_TYPE!"=="DOCKER" (
 echo.
 echo  Checking disk space on !TARGET_DRIVE!...
 for /f "tokens=3" %%a in ('dir !TARGET_DRIVE!\ 2^>nul ^| findstr /C:"bytes free"') do set "FREE_SPACE_STR=%%a"
@@ -461,10 +465,15 @@ if !FREE_SPACE_MB! GEQ 1200 (
     REM Fallback if calculation failed - just note we couldn't check
     echo  [i] Disk space: Could not determine ^(ensure 1.2+ GB free on !TARGET_DRIVE!^)
 )
+)
 
 echo.
-echo  [i] n8n will store data at: !N8N_DATA_PATH!\.n8n\
-echo      (n8n automatically creates the .n8n subfolder)
+if "!N8N_INSTALL_TYPE!"=="DOCKER" (
+    echo  [i] n8n data will be stored in Docker volume
+) else (
+    echo  [i] n8n will store data at: !N8N_DATA_PATH!\.n8n\
+    echo      ^(n8n automatically creates the .n8n subfolder^)
+)
 echo.
 set /p "CONFIRM_N8N=  Confirm choice? (Y/N): "
 if /i not "%CONFIRM_N8N%"=="Y" (
@@ -556,22 +565,34 @@ set /p "DOCKER_VOLUME_INPUT=  Volume name (default: n8n_data): "
 if "!DOCKER_VOLUME_INPUT!"=="" set "DOCKER_VOLUME=n8n_data"
 if defined DOCKER_VOLUME_INPUT set "DOCKER_VOLUME=!DOCKER_VOLUME_INPUT!"
 
-echo.
-REM Timezone
-echo  Timezone:
-echo  • Press Enter for default: UTC
-echo  • Or enter your timezone (e.g., America/New_York, Europe/London)
-echo  • See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-echo.
-set /p "DOCKER_TIMEZONE_INPUT=  Timezone (default: UTC): "
-if "!DOCKER_TIMEZONE_INPUT!"=="" set "DOCKER_TIMEZONE=UTC"
-if defined DOCKER_TIMEZONE_INPUT set "DOCKER_TIMEZONE=!DOCKER_TIMEZONE_INPUT!"
+REM Auto-detect timezone from Windows and convert to IANA format
+for /f "tokens=*" %%t in ('powershell -Command "[System.TimeZoneInfo]::Local.Id"') do set "WIN_TZ=%%t"
+set "DOCKER_TIMEZONE=UTC"
+REM Map common Windows timezones to IANA format
+if "!WIN_TZ!"=="Pacific Standard Time" set "DOCKER_TIMEZONE=America/Los_Angeles"
+if "!WIN_TZ!"=="Mountain Standard Time" set "DOCKER_TIMEZONE=America/Denver"
+if "!WIN_TZ!"=="Central Standard Time" set "DOCKER_TIMEZONE=America/Chicago"
+if "!WIN_TZ!"=="Eastern Standard Time" set "DOCKER_TIMEZONE=America/New_York"
+if "!WIN_TZ!"=="Atlantic Standard Time" set "DOCKER_TIMEZONE=America/Halifax"
+if "!WIN_TZ!"=="GMT Standard Time" set "DOCKER_TIMEZONE=Europe/London"
+if "!WIN_TZ!"=="W. Europe Standard Time" set "DOCKER_TIMEZONE=Europe/Amsterdam"
+if "!WIN_TZ!"=="Central Europe Standard Time" set "DOCKER_TIMEZONE=Europe/Budapest"
+if "!WIN_TZ!"=="Central European Standard Time" set "DOCKER_TIMEZONE=Europe/Warsaw"
+if "!WIN_TZ!"=="Romance Standard Time" set "DOCKER_TIMEZONE=Europe/Paris"
+if "!WIN_TZ!"=="FLE Standard Time" set "DOCKER_TIMEZONE=Europe/Kiev"
+if "!WIN_TZ!"=="Russian Standard Time" set "DOCKER_TIMEZONE=Europe/Moscow"
+if "!WIN_TZ!"=="India Standard Time" set "DOCKER_TIMEZONE=Asia/Kolkata"
+if "!WIN_TZ!"=="China Standard Time" set "DOCKER_TIMEZONE=Asia/Shanghai"
+if "!WIN_TZ!"=="Tokyo Standard Time" set "DOCKER_TIMEZONE=Asia/Tokyo"
+if "!WIN_TZ!"=="Singapore Standard Time" set "DOCKER_TIMEZONE=Asia/Singapore"
+if "!WIN_TZ!"=="AUS Eastern Standard Time" set "DOCKER_TIMEZONE=Australia/Sydney"
+if "!WIN_TZ!"=="New Zealand Standard Time" set "DOCKER_TIMEZONE=Pacific/Auckland"
 
 echo.
 echo  [✓] Docker Configuration:
 echo      Container: !DOCKER_CONTAINER!
 echo      Volume:    !DOCKER_VOLUME!
-echo      Timezone:  !DOCKER_TIMEZONE!
+echo      Timezone:  !DOCKER_TIMEZONE! (auto-detected)
 echo.
 set /p "CONFIRM_DOCKER=  Confirm Docker settings? (Y/N): "
 if /i not "!CONFIRM_DOCKER!"=="Y" (
@@ -913,7 +934,15 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
     REM Docker installation - no scripts needed, use Docker Desktop
     set "N8N_INSTALL_PATH=%SCRIPTDIR%"
 ) else (
-    set "START_SCRIPT=!N8N_INSTALL_PATH!\start_n8n.bat"
+    REM Set start script location based on install type
+    if "!N8N_INSTALL_TYPE!"=="GLOBAL" (
+        REM Global install - save start script to user profile n8n folder
+        if not exist "%USERPROFILE%\n8n" mkdir "%USERPROFILE%\n8n"
+        set "START_SCRIPT=%USERPROFILE%\n8n\start_n8n.bat"
+        set "N8N_INSTALL_PATH=%USERPROFILE%\n8n"
+    ) else (
+        set "START_SCRIPT=!N8N_INSTALL_PATH!\start_n8n.bat"
+    )
 
     if "!N8N_INSTALL_TYPE!"=="FOLDER" (
         REM Folder installation - use npx
@@ -1161,7 +1190,7 @@ echo  SYSTEM INFORMATION >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo  Installation Date: %DATE% %TIME% >> "!README_FILE!"
-echo  Installer Version: 0.1.4 >> "!README_FILE!"
+echo  Installer Version: 0.1.5 >> "!README_FILE!"
 echo  Node.js Version:   Run 'node --version' to check >> "!README_FILE!"
 echo  npm Version:       Run 'npm --version' to check >> "!README_FILE!"
 echo. >> "!README_FILE!"

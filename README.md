@@ -3,7 +3,7 @@
 An unofficial, community-created installation wizard for [n8n](https://n8n.io) on Windows systems.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.4-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
+[![Version](https://img.shields.io/badge/version-0.1.5-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
 
 ## ⚠️ IMPORTANT DISCLAIMER
 
