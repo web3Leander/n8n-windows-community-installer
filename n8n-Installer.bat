@@ -21,7 +21,7 @@ cls
 echo.
 echo  ══════════════════════════════════════════════════════════════
 echo      n8n Installation Wizard for Windows
-echo      Community Edition - Version 0.1.2
+echo      Community Edition - Version 0.1.3
 echo  ══════════════════════════════════════════════════════════════
 echo.
 echo  IMPORTANT NOTICE:
@@ -157,6 +157,20 @@ if "%DOCKER_AVAILABLE%"=="YES" (
 ) else (
     echo   Docker:  Not available ^(optional^)
 )
+
+REM Check if default port 5678 is in use
+echo.
+echo  Checking default port 5678...
+netstat -an 2>nul | findstr /C:":5678 " | findstr /C:"LISTENING" >nul 2>&1
+if !ERRORLEVEL! EQU 0 (
+    echo  [!] Warning: Port 5678 is already in use
+    echo      You will need to choose a different port during setup
+    set "DEFAULT_PORT_IN_USE=YES"
+) else (
+    echo  [✓] Port 5678 is available
+    set "DEFAULT_PORT_IN_USE=NO"
+)
+
 echo.
 set /p "CONTINUE=  Ready to proceed? (Y/N): "
 if /i not "%CONTINUE%"=="Y" (
@@ -314,6 +328,54 @@ if "%N8N_TYPE%"=="1" (
             echo.
             goto ASK_N8N_TYPE
         )
+    ) else (
+        REM Folder exists - check if n8n is already installed there
+        if exist "!N8N_INSTALL_PATH!\node_modules\n8n" (
+            echo.
+            echo  ════════════════════════════════════════
+            echo   WARNING: Existing Installation Detected
+            echo  ════════════════════════════════════════
+            echo.
+            echo  n8n is already installed in this folder:
+            echo  !N8N_INSTALL_PATH!
+            echo.
+            echo  Reinstalling will OVERWRITE the n8n program files.
+            echo.
+            echo  IMPORTANT:
+            echo  • Your workflows, credentials, and settings in the
+            echo    .n8n data folder will be preserved
+            echo  • Only the n8n program files will be replaced
+            echo.
+            echo  ════════════════════════════════════════
+            echo   CONFIRMATION REQUIRED
+            echo  ════════════════════════════════════════
+            echo.
+            echo  To proceed with overwriting the existing installation,
+            echo  you must type: DELETE
+            echo.
+            echo  Type DELETE in CAPITAL LETTERS to confirm, or
+            echo  type anything else to cancel and go back.
+            echo.
+            set /p "FOLDER_OVERWRITE_CONFIRM=  Type DELETE to confirm: "
+            if not "!FOLDER_OVERWRITE_CONFIRM!"=="DELETE" (
+                echo.
+                echo  Installation cancelled. Returning to selection...
+                timeout /t 2 /nobreak >nul
+                cls
+                echo.
+                echo  ════════════════════════════════════════
+                echo      n8n Installation Wizard
+                echo  ════════════════════════════════════════
+                echo.
+                echo  Step 2 of 4: Installation Setup
+                echo  ────────────────────────────────────────
+                echo.
+                goto ASK_N8N_TYPE
+            )
+            echo.
+            echo  Confirmation accepted. Proceeding...
+            timeout /t 2 /nobreak >nul
+        )
     )
     echo.
     echo  [✓] Selected: Folder installation
@@ -361,8 +423,43 @@ if "%N8N_TYPE%"=="1" (
 REM Set data path based on installation type
 if "!N8N_INSTALL_TYPE!"=="GLOBAL" (
     set "N8N_DATA_PATH=%USERPROFILE%\.n8n"
+    set "TARGET_DRIVE=%SYSTEMDRIVE%"
 ) else (
     set "N8N_DATA_PATH=!N8N_INSTALL_PATH!"
+    set "TARGET_DRIVE=!N8N_INSTALL_PATH:~0,2!"
+)
+
+REM Check disk space on target drive (need at least 1.2GB)
+echo.
+echo  Checking disk space on !TARGET_DRIVE!...
+for /f "tokens=3" %%a in ('dir !TARGET_DRIVE!\ 2^>nul ^| findstr /C:"bytes free"') do set "FREE_SPACE_STR=%%a"
+set "FREE_SPACE_STR=!FREE_SPACE_STR:,=!"
+set /a "FREE_SPACE_MB=!FREE_SPACE_STR:~0,-6!" 2>nul
+if !FREE_SPACE_MB! GEQ 1200 (
+    echo  [✓] Disk space on !TARGET_DRIVE!: !FREE_SPACE_MB! MB available
+) else if !FREE_SPACE_MB! GEQ 1 (
+    echo  [!] Warning: Low disk space on !TARGET_DRIVE! ^(!FREE_SPACE_MB! MB^)
+    echo      n8n installation requires approximately 1.2 GB
+    echo.
+    set /p "CONTINUE_LOW_SPACE=  Continue anyway? (Y/N): "
+    if /i not "!CONTINUE_LOW_SPACE!"=="Y" (
+        echo.
+        echo  Returning to installation setup...
+        timeout /t 2 /nobreak >nul
+        cls
+        echo.
+        echo  ════════════════════════════════════════
+        echo      n8n Installation Wizard
+        echo  ════════════════════════════════════════
+        echo.
+        echo  Step 2 of 4: Installation Setup
+        echo  ────────────────────────────────────────
+        echo.
+        goto ASK_N8N_TYPE
+    )
+) else (
+    REM Fallback if calculation failed - just note we couldn't check
+    echo  [i] Disk space: Could not determine ^(ensure 1.2+ GB free on !TARGET_DRIVE!^)
 )
 
 echo.
@@ -384,54 +481,58 @@ if /i not "%CONFIRM_N8N%"=="Y" (
 )
 
 REM Sub-step: Docker Configuration (if Docker installation selected)
-if "%N8N_INSTALL_TYPE%"=="DOCKER" (
+if not "%N8N_INSTALL_TYPE%"=="DOCKER" goto SKIP_DOCKER_CONFIG
+
+:ASK_DOCKER_CONFIG
+echo.
+echo.
+echo  Docker Configuration
+echo  ────────────────────────────────────────
+echo.
+echo  Configure Docker container settings.
+echo.
+
+REM Container name
+echo  Container Name:
+echo  • Press Enter for default: n8n
+echo  • Or enter a custom name (no spaces)
+echo.
+set /p "DOCKER_CONTAINER_INPUT=  Container name (default: n8n): "
+if "!DOCKER_CONTAINER_INPUT!"=="" set "DOCKER_CONTAINER=n8n"
+if defined DOCKER_CONTAINER_INPUT set "DOCKER_CONTAINER=!DOCKER_CONTAINER_INPUT!"
+
+REM Check if container with this name already exists
+docker ps -a --format "{{.Names}}" 2>nul | findstr /X /C:"!DOCKER_CONTAINER!" >nul 2>&1
+if !ERRORLEVEL! EQU 0 (
     echo.
+    echo  ════════════════════════════════════════
+    echo   WARNING: Container Already Exists
+    echo  ════════════════════════════════════════
     echo.
-    :ASK_DOCKER_CONFIG
-    echo  Docker Configuration
-    echo  ────────────────────────────────────────
+    echo  A Docker container named "!DOCKER_CONTAINER!" already exists.
     echo.
-    echo  Configure Docker container settings.
+    echo  Options:
+    echo  1. Remove the existing container and create new
+    echo  2. Choose a different container name
     echo.
-    
-    REM Container name
-    echo  Container Name:
-    echo  • Press Enter for default: n8n
-    echo  • Or enter a custom name (no spaces)
-    echo.
-    set /p "DOCKER_CONTAINER_INPUT=  Container name (default: n8n): "
-    if "!DOCKER_CONTAINER_INPUT!"=="" set "DOCKER_CONTAINER=n8n"
-    if defined DOCKER_CONTAINER_INPUT set "DOCKER_CONTAINER=!DOCKER_CONTAINER_INPUT!"
-    
-    echo.
-    REM Volume name
-    echo  Data Volume Name:
-    echo  • Press Enter for default: n8n_data
-    echo  • Or enter a custom volume name
-    echo.
-    set /p "DOCKER_VOLUME_INPUT=  Volume name (default: n8n_data): "
-    if "!DOCKER_VOLUME_INPUT!"=="" set "DOCKER_VOLUME=n8n_data"
-    if defined DOCKER_VOLUME_INPUT set "DOCKER_VOLUME=!DOCKER_VOLUME_INPUT!"
-    
-    echo.
-    REM Timezone
-    echo  Timezone:
-    echo  • Press Enter for default: UTC
-    echo  • Or enter your timezone (e.g., America/New_York, Europe/London)
-    echo  • See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-    echo.
-    set /p "DOCKER_TIMEZONE_INPUT=  Timezone (default: UTC): "
-    if "!DOCKER_TIMEZONE_INPUT!"=="" set "DOCKER_TIMEZONE=UTC"
-    if defined DOCKER_TIMEZONE_INPUT set "DOCKER_TIMEZONE=!DOCKER_TIMEZONE_INPUT!"
-    
-    echo.
-    echo  [✓] Docker Configuration:
-    echo      Container: !DOCKER_CONTAINER!
-    echo      Volume:    !DOCKER_VOLUME!
-    echo      Timezone:  !DOCKER_TIMEZONE!
-    echo.
-    set /p "CONFIRM_DOCKER=  Confirm Docker settings? (Y/N): "
-    if /i not "!CONFIRM_DOCKER!"=="Y" (
+    set /p "CONTAINER_ACTION=  Your choice (1 or 2): "
+    if "!CONTAINER_ACTION!"=="1" (
+        echo.
+        echo  Stopping and removing existing container...
+        docker stop !DOCKER_CONTAINER! >nul 2>&1
+        docker rm !DOCKER_CONTAINER! >nul 2>&1
+        if !ERRORLEVEL! EQU 0 (
+            echo  [✓] Existing container removed
+        ) else (
+            echo  [✗] Failed to remove container. Please remove manually:
+            echo      docker rm -f !DOCKER_CONTAINER!
+            pause
+            goto ASK_DOCKER_CONFIG
+        )
+    ) else (
+        echo.
+        echo  Please enter a different container name.
+        timeout /t 2 /nobreak >nul
         cls
         echo.
         echo  ════════════════════════════════════════
@@ -445,6 +546,48 @@ if "%N8N_INSTALL_TYPE%"=="DOCKER" (
     )
 )
 
+echo.
+REM Volume name
+echo  Data Volume Name:
+echo  • Press Enter for default: n8n_data
+echo  • Or enter a custom volume name
+echo.
+set /p "DOCKER_VOLUME_INPUT=  Volume name (default: n8n_data): "
+if "!DOCKER_VOLUME_INPUT!"=="" set "DOCKER_VOLUME=n8n_data"
+if defined DOCKER_VOLUME_INPUT set "DOCKER_VOLUME=!DOCKER_VOLUME_INPUT!"
+
+echo.
+REM Timezone
+echo  Timezone:
+echo  • Press Enter for default: UTC
+echo  • Or enter your timezone (e.g., America/New_York, Europe/London)
+echo  • See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+echo.
+set /p "DOCKER_TIMEZONE_INPUT=  Timezone (default: UTC): "
+if "!DOCKER_TIMEZONE_INPUT!"=="" set "DOCKER_TIMEZONE=UTC"
+if defined DOCKER_TIMEZONE_INPUT set "DOCKER_TIMEZONE=!DOCKER_TIMEZONE_INPUT!"
+
+echo.
+echo  [✓] Docker Configuration:
+echo      Container: !DOCKER_CONTAINER!
+echo      Volume:    !DOCKER_VOLUME!
+echo      Timezone:  !DOCKER_TIMEZONE!
+echo.
+set /p "CONFIRM_DOCKER=  Confirm Docker settings? (Y/N): "
+if /i not "!CONFIRM_DOCKER!"=="Y" (
+    cls
+    echo.
+    echo  ════════════════════════════════════════
+    echo      n8n Installation Wizard
+    echo  ════════════════════════════════════════
+    echo.
+    echo  Step 2 of 4: Installation Setup
+    echo  ────────────────────────────────────────
+    echo.
+    goto ASK_DOCKER_CONFIG
+)
+
+:SKIP_DOCKER_CONFIG
 REM Sub-step: Network Configuration
 echo.
 echo.
@@ -452,6 +595,10 @@ echo.
 echo  n8n Network Configuration
 echo  ────────────────────────────────────────
 echo.
+if "!DEFAULT_PORT_IN_USE!"=="YES" (
+    echo  [!] Note: Port 5678 is in use - please choose a different port
+    echo.
+)
 if "%N8N_INSTALL_TYPE%"=="DOCKER" (
     echo  Configure the port for n8n to run on.
     echo  Docker will map this port to the container.
@@ -892,7 +1039,7 @@ echo  SYSTEM INFORMATION >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo  Installation Date: %DATE% %TIME% >> "!README_FILE!"
-echo  Installer Version: 0.1.1 >> "!README_FILE!"
+echo  Installer Version: 0.1.3 >> "!README_FILE!"
 echo  Node.js Version:   Run 'node --version' to check >> "!README_FILE!"
 echo  npm Version:       Run 'npm --version' to check >> "!README_FILE!"
 echo. >> "!README_FILE!"

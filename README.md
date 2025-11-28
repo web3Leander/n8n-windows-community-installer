@@ -3,7 +3,7 @@
 An unofficial, community-created installation wizard for [n8n](https://n8n.io) on Windows systems.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.2-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
+[![Version](https://img.shields.io/badge/version-0.1.3-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
 
 ## ⚠️ IMPORTANT DISCLAIMER
 
@@ -24,21 +24,28 @@ This interactive installation wizard simplifies the process of installing n8n on
 
 ## ✨ Features
 
-- **Streamlined Installation:**
-  - Choose between global or folder-specific installation
-  - Automatic data directory configuration (no separate prompts)
-  - Network configuration (custom host/IP and port)
+- **Three Installation Methods:**
+  - Global installation (npm install -g n8n)
+  - Folder-specific installation (portable, isolated)
+  - Docker installation (containerized, easy updates)
 
-- **Smart Installation:**
-  - Automatic prerequisite checking (Node.js and npm)
-  - Installation verification (ignores npm warnings, validates actual installation)
+- **Smart Pre-Installation Checks:**
+  - Automatic prerequisite checking (Node.js, npm, Docker)
+  - Port 5678 availability detection
+  - Disk space verification on target drive (1.2GB+ required)
+  - Existing installation detection with overwrite confirmation
+
+- **Streamlined Installation:**
+  - Automatic data directory configuration
+  - Network configuration (custom host/IP and port)
+  - Docker container and volume configuration
+  - Installation verification (validates actual installation)
   - Automatic PATH configuration for folder installations
-  - Creates ready-to-use start scripts
 
 - **Complete Documentation:**
   - Generates comprehensive README.txt in installation folder
+  - Creates ready-to-use start scripts with configured settings
   - Includes quick start guide, troubleshooting tips, and resource links
-  - Start scripts with configured network settings
   - Clear explanation of n8n's automatic `.n8n` folder creation
 
 ## 📦 System Requirements
@@ -63,7 +70,7 @@ This interactive installation wizard simplifies the process of installing n8n on
 ### Recommended
 
 - **RAM:** 4GB minimum, 8GB recommended
-- **Disk Space:** 2GB free space for n8n and dependencies
+- **Disk Space:** 1.2GB free space for n8n and dependencies
 - **Internet Connection:** Required for downloading n8n packages
 - **Administrator Rights:** Optional, but recommended for global installations
 
@@ -110,11 +117,10 @@ Runs n8n in a Docker container:
 
 The installer will guide you through:
 
-1. **System verification** - Checks Node.js and npm prerequisites
-2. **Installation type** - Choose global or folder-specific
-3. **Network configuration** - Set host and port
-4. **Installation** - Downloads and installs n8n
-5. **Setup completion** - Creates start script and documentation
+1. **System verification** - Checks Node.js, npm, Docker prerequisites and port availability
+2. **Installation setup** - Choose installation type, path, and confirm disk space
+3. **Installation** - Downloads and installs n8n (npm or Docker)
+4. **Setup completion** - Creates start script and documentation
 
 ## 🔧 Network Configuration
 
