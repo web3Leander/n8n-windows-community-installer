@@ -1,9 +1,23 @@
 # Changelog
 
+<!-- markdownlint-disable MD024 -->
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.6] - 2026-05-01
+
+### Changed
+
+- Updated native installation requirements for n8n 2.x to Node.js 20.19+ or 22.x LTS
+- Removed Docker environment flags that conflict with n8n 2.x single-container installs
+- Disabled strict settings file permission enforcement in generated native Windows start scripts
+
+### Fixed
+
+- Prevented unsupported Node.js current releases, such as Node.js 25, from reaching native npm installs and triggering `node-gyp` native module builds
 
 ## [0.1.5] - 2025-11-28
 

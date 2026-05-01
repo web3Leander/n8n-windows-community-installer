@@ -3,7 +3,7 @@
 An unofficial, community-created installation wizard for [n8n](https://n8n.io) on Windows systems.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.5-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
+[![Version](https://img.shields.io/badge/version-0.1.6-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
 
 ## ⚠️ IMPORTANT DISCLAIMER
 
@@ -20,367 +20,328 @@ For issues with this installer, please open an issue in this repository.
 
 ## 📋 Overview
 
-This interactive installation wizard simplifies the process of installing n8n on Windows systems. It provides a user-friendly, step-by-step interface with full customization options for your n8n installation.
+This installer is a guided Windows batch wizard for setting up [n8n](https://n8n.io) without having to assemble every command by hand. It supports native npm installs and Docker-based installs, then writes a local `README.txt` with the exact settings chosen during setup.
+
+It is designed for local development, personal automation, and small Windows-hosted n8n setups. For hardened production deployments, use this as a starting point and review n8n's official production guidance.
 
 ## ✨ Features
 
-- **Three Installation Methods:**
-  - Global installation (npm install -g n8n)
-  - Folder-specific installation (portable, isolated)
-  - Docker installation (containerized, easy updates)
+- **Three installation methods**
+  - Global npm install with the `n8n` command available system-wide
+  - Folder-specific npm install for isolated or test instances
+  - Docker install using the official `docker.n8n.io/n8nio/n8n` image
 
-- **Smart Pre-Installation Checks:**
-  - Automatic prerequisite checking (Node.js, npm, Docker)
-  - Port 5678 availability detection
-  - Disk space verification on target drive (1.2GB+ required)
-  - Existing installation detection with overwrite confirmation
+- **n8n 2.x compatibility checks**
+  - Native installs require Node.js `20.19+` or `22.x LTS`
+  - Unsupported current releases such as Node.js 25 are blocked before `npm install`
+  - Docker installs avoid forcing external task-runner flags and let n8n use its default runner behavior
 
-- **Auto-Update Check:**
-  - Optional update checking on each n8n start
-  - Compares installed version with latest available
-  - Prompts before installing updates
-  - Supports both global and folder installations
+- **Guided setup and safety checks**
+  - Checks Node.js, npm, Docker availability, and default port `5678`
+  - Detects existing global, folder, or Docker installations before overwriting
+  - Checks available disk space for native installs
+  - Prompts for folder paths, Docker container/volume names, host, port, update checks, and shortcuts
 
-- **Desktop Shortcut:**
-  - Optional desktop shortcut creation for quick access
-  - Choose between current user or all users
-  - Creates proper Windows .lnk shortcut
+- **Windows-friendly launch configuration**
+  - Creates `start_n8n.bat` for global and folder installs
+  - Sets `N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false` for native Windows launches
+  - Optionally creates a desktop shortcut for the current user or all users
+  - Optionally checks for n8n updates whenever the generated start script runs
 
-- **Streamlined Installation:**
-  - Automatic data directory configuration
-  - Network configuration (custom host/IP and port)
-  - Docker container and volume configuration
-  - Installation verification (validates actual installation)
-  - Automatic PATH configuration for folder installations
-
-- **Complete Documentation:**
-  - Generates comprehensive README.txt in installation folder
-  - Creates ready-to-use start scripts with configured settings
-  - Includes quick start guide, troubleshooting tips, and resource links
-  - Clear explanation of n8n's automatic `.n8n` folder creation
+- **Generated documentation**
+  - Writes a `README.txt` with the selected install type, paths, ports, Docker names, and useful commands
+  - Documents data folder behavior and backup reminders
+  - Includes troubleshooting notes for the installed instance
 
 ## 📦 System Requirements
 
-### Required
+### Required for the installer
 
-- **Operating System:** Windows 10 or Windows 11 (64-bit)
-- **Node.js:** Version 18.x or later ([Download](https://nodejs.org/))
-  - Recommended: Latest LTS version
-  - *Not required for Docker installation*
-- **npm:** Version 8.x or later (included with Node.js)
-  - *Not required for Docker installation*
-- **PowerShell:** 5.1 or later (included with Windows)
+- **Operating system:** Windows 10 or Windows 11, 64-bit
+- **PowerShell:** 5.1 or later, included with Windows
+- **Internet connection:** Required to download npm packages or Docker images
+- **Node.js and npm:** The current wizard checks for both before installation choices are shown
 
-### Optional
+### Native npm requirements
 
-- **Docker Desktop:** For Docker installation option ([Download](https://www.docker.com/products/docker-desktop))
-  - Provides isolated, containerized n8n installation
-  - Easier updates and backups
-  - Consistent environment across systems
+- **Node.js:** `20.19+` or `22.x LTS` from [nodejs.org](https://nodejs.org/)
+- **npm:** Included with supported Node.js versions
+- **Disk space:** At least 1.2 GB free on the target drive
+- **Administrator rights:** Optional, but recommended for global installs and all-users shortcuts
 
-### Recommended
+Avoid Node.js 24+, Node.js 25, and other unsupported current release lines for native npm installs. They can force native dependency compilation and fail with `node-gyp`, Python, or Visual Studio build-tool errors.
 
-- **RAM:** 4GB minimum, 8GB recommended
-- **Disk Space:** 1.2GB free space for n8n and dependencies
-- **Internet Connection:** Required for downloading n8n packages
-- **Administrator Rights:** Optional, but recommended for global installations
+### Docker requirements
+
+- **Docker Desktop:** Installed and running from [docker.com](https://www.docker.com/products/docker-desktop)
+- **Docker volume storage:** Enough space for workflows, credentials, logs, and package data
+
+If Docker is available, the installer can offer Docker even when the detected Node.js version is not supported for native installs.
 
 ## 🚀 Quick Start
 
-1. **Download** the `n8n-Installer.bat` file
-2. **Right-click** and select "Run as Administrator" (optional, but recommended for global installations)
-3. **Follow the prompts** in the installation wizard
-4. **Start n8n** using the generated start script or command
+1. Download `n8n-Installer.bat`.
+2. Install Node.js `22.x LTS` for the smoothest native install path.
+3. Start Docker Desktop first if you plan to use Docker.
+4. Right-click `n8n-Installer.bat` and choose **Run as Administrator** when using global installs or all-users shortcuts.
+5. Follow the prompts and confirm the final summary.
+6. Start n8n with the generated `start_n8n.bat`, Docker Desktop, or the Docker command shown in the generated `README.txt`.
 
 ## 📖 Installation Options
 
 ### Global Installation
 
-Installs n8n system-wide using npm:
+Uses `npm install -g n8n`.
 
-- n8n command available from any terminal
-- Data stored in `%USERPROFILE%\.n8n`
-- Standard installation method
-- Easy updates with `npm update -g n8n`
+- Best when you want the `n8n` command available from any terminal
+- Creates the launcher and generated README under `%USERPROFILE%\n8n`
+- Can detect and confirm before replacing an existing global n8n package
+- Supports optional start-time update checks with `npm update -g n8n`
 
 ### Folder-Specific Installation
 
-Installs n8n in a specific folder:
+Uses `npm install n8n` inside a folder you choose.
 
-- Completely isolated installation
-- Data stored in the same folder
-- No system-wide changes
-- Useful for testing or running multiple versions
-- Portable (can be moved/backed up easily)
+- Best for isolated installs, testing, and multiple side-by-side instances
+- Keeps the package, launcher, generated README, and data base path together
+- Adds the folder's `node_modules\.bin` path to the current user's PATH
+- Supports optional start-time update checks with `npm update n8n`
 
 ### Docker Installation
 
-Runs n8n in a Docker container:
+Creates a Docker volume, pulls the official n8n image, and starts one container.
 
-- Completely isolated and portable
-- Easy updates and backups
-- Consistent environment across systems
-- Requires Docker Desktop
-- Data stored in Docker volume
-- Simple container management scripts included
+- Best when you want a containerized n8n runtime
+- Lets you choose the container name and Docker volume name
+- Auto-detects the Windows timezone and maps common zones to IANA names
+- Maps your chosen Windows port to container port `5678`
+- Uses Docker Desktop or Docker CLI commands for start, stop, logs, and updates
+
+The installer runs a single n8n container. It does not enable external task runners or start a separate `n8nio/runners` container.
 
 ## 🎯 How It Works
 
-The installer will guide you through:
-
-1. **System verification** - Checks Node.js, npm, Docker prerequisites and port availability
-2. **Installation setup** - Choose installation type, path, and confirm disk space
-3. **Installation** - Downloads and installs n8n (npm or Docker)
-4. **Setup completion** - Creates start script and documentation
+1. **System verification** checks Node.js, npm, Docker status, and default port `5678`.
+2. **Installation setup** collects the install type, target folder or Docker names, network settings, update preference, and shortcut preference.
+3. **Installation** runs npm or Docker commands and verifies that n8n was installed or the container started.
+4. **Completion** creates generated documentation and, for native installs, a configured `start_n8n.bat` launcher.
 
 ## 🔧 Network Configuration
 
-The installer allows you to configure:
+### Native network settings
 
-- **Host/IP Address:**
-  - `127.0.0.1` (localhost only - default)
-  - `0.0.0.0` (all network interfaces)
-  - Custom IP address (e.g., `192.168.1.100`)
+For global and folder installs, the wizard asks for both host and port.
 
-- **Port Number:**
-  - `5678` (default)
-  - Custom port (1024-65535)
+- `127.0.0.1` keeps n8n available only on the local computer and is the default.
+- `0.0.0.0` listens on all network interfaces and can expose n8n to your LAN.
+- A specific local IP such as `192.168.1.100` limits listening to that interface.
+- Port `5678` is the default, with common alternatives such as `3000`, `5000`, or `8080`.
 
-### 🔒 Security Considerations
+### Docker network settings
 
-**Important:** Your network configuration affects security!
+For Docker installs, the wizard asks for the Windows host port only. The container always listens on port `5678` internally, and Docker maps your chosen host port to it.
 
-- **127.0.0.1 (localhost)** - Most secure
-  - Only accessible from your computer
-  - Recommended for personal use
-  - No firewall configuration needed
+### Security Notes
 
-- **0.0.0.0 (all interfaces)** - Less secure
-  - Accessible from any device on your network
-  - May be accessible from the internet if router allows
-  - **Requires firewall configuration**
-  - Only use if you need remote access
-  - Consider using authentication and HTTPS in production
-
-- **Specific IP (e.g., 192.168.1.100)** - Moderate security
-  - Accessible from devices on the same network
-  - Good for LAN access
-  - Configure Windows Firewall accordingly
-
-**Best Practice:** Start with `127.0.0.1` for testing, then configure for your specific needs.
+- Prefer `127.0.0.1` for personal/local use.
+- Use `0.0.0.0` only when you intentionally need LAN access.
+- Check Windows Firewall rules when exposing n8n beyond localhost.
+- Add HTTPS, authentication, backups, and process supervision before treating an installation as production-ready.
 
 ## 📁 What Gets Installed
 
-After installation, you'll have:
+### Native installed files
 
-**For Global/Folder Installations:**
+- n8n installed through npm
+- A configured `start_n8n.bat` launcher
+- A generated `README.txt` with the exact paths and settings chosen
+- A data folder created by n8n on first launch
+- Optional desktop shortcut
 
-- **n8n application** (globally or in your chosen folder)
-- **start_n8n.bat** - Configured start script with network settings
-- **README.txt** - Complete installation documentation
-- **Data folder** - Automatically created as `.n8n` subfolder on first run
-  - Global install: `%USERPROFILE%\.n8n\`
-  - Folder install: `<your-folder>\.n8n\`
-  - Contains: workflows, credentials, settings, database, and encryption key
+The generated start script sets:
 
-### ⚠️ CRITICAL: Backup Your Encryption Key
+```batch
+N8N_USER_FOLDER=<your configured data base path>
+N8N_HOST=<your selected host>
+N8N_PORT=<your selected port>
+N8N_PROTOCOL=http
+N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+```
 
-**IMPORTANT:** On first startup, n8n automatically generates an encryption key that is used to secure your credentials and sensitive data. This key is stored in your `.n8n` folder.
+n8n stores workflows, credentials, settings, the local database, and the encryption key in its user folder. The generated `README.txt` shows the exact path for the installation you created.
 
-**Why this matters:**
+### Docker installed files
 
-- Your workflows and credentials are encrypted with this key
-- Without this key, you **CANNOT** recover your data after reinstalling
-- If you lose the encryption key, your workflows and credentials are permanently lost
+- One Docker container running `docker.n8n.io/n8nio/n8n`
+- One Docker volume mounted to `/home/node/.n8n`
+- Port mapping from your selected Windows port to container port `5678`
+- A generated `README.txt` in the installer folder with container and volume details
 
-**How to protect your data:**
+## 🔐 Backup Your Encryption Key
 
-1. **Backup the entire `.n8n` folder regularly:**
+On first startup, n8n creates an encryption key used to protect credentials and other sensitive data. Back up the full n8n data folder or Docker volume, not only exported workflows.
 
-   ```text
-   Global install: %USERPROFILE%\.n8n\
-   Folder install: <your-installation-folder>\.n8n\
-   ```
-
-2. **To restore after reinstallation:**
-   - Install n8n to the same location (or update paths in start_n8n.bat)
-   - **Before starting n8n for the first time**, copy your backed-up `.n8n` folder
-   - This preserves your encryption key, workflows, and all data
-
-3. **What to backup:**
-   - The entire `.n8n` folder (contains everything you need)
-   - Your `start_n8n.bat` script (for configuration reference)
-
-**Best Practice:** Create backups before:
+Back up before:
 
 - Upgrading n8n
-- Changing installation locations
-- Major system updates
-- Moving to a new computer
+- Moving an installation
+- Reinstalling Windows or changing computers
+- Deleting a folder, global package, container, or Docker volume
 
-**For Docker Installation:**
-
-- **Docker container** - Running n8n in an isolated environment
-- **Docker volume** - Persistent data storage for workflows and settings
-- **README.txt** - Complete installation documentation with Docker commands
-- Manage container via Docker Desktop or docker CLI commands
+Without the original encryption key, encrypted credentials cannot be recovered.
 
 ## 🎯 Usage
 
 ### Starting n8n
 
-**Global/Folder Installation:**
+For global or folder installs, run:
 
-1. **Using the start script:**
+```batch
+start_n8n.bat
+```
 
-   ```batch
-   Double-click start_n8n.bat
-   ```
+Use the generated shortcut if you created one, or run the script from a terminal to keep logs visible.
 
-2. **Using command line** (global install):
+For Docker installs, run:
 
-   ```bash
-   n8n start
-   ```
+```bash
+docker start n8n
+```
 
-**Docker Installation:**
-
-1. **Using Docker Desktop:**
-   - Open Docker Desktop and start the n8n container
-
-2. **Using command line:**
-
-   ```bash
-   docker start n8n
-   ```
-
-3. **Access the web interface:**
-
-   ```text
-   Open your browser to: http://localhost:5678
-   (or your configured host:port)
-   ```
+Replace `n8n` with your custom container name if you chose one during setup.
 
 ### Stopping n8n
 
-**Native Installation:** Press `Ctrl+C` in the terminal window where n8n is running.
+- Native installs: press `Ctrl+C` in the terminal running n8n.
+- Docker installs: use Docker Desktop or run `docker stop <container-name>`.
 
-**Docker Installation:** Use Docker Desktop or run `docker stop n8n`
+### Viewing Logs
 
-## 🛠️ Troubleshooting
+- Native installs: read the terminal window running `start_n8n.bat`.
+- Docker installs: run `docker logs -f <container-name>`.
 
-### n8n won't start
+### Updating n8n
 
-- Check that your configured port is not already in use
-- Try running: `netstat -ano | findstr :5678` (replace 5678 with your port)
-- Verify Node.js is properly installed: `node --version`
-
-### Can't access web interface
-
-- Ensure n8n is running (check the terminal window)
-- Try accessing: `http://localhost:5678`
-- Check Windows Firewall settings if using non-localhost IP
-
-### Port already in use
-
-- Edit `start_n8n.bat` and change `N8N_PORT` to a different port
-- Common alternatives: 3000, 5000, 8080
-
-For more help, visit the [n8n Community Forum](https://community.n8n.io)
-
-## ❓ Frequently Asked Questions
-
-### Can I run multiple n8n instances?
-
-Yes! Use the Custom Install option with folder-specific installations. Install each instance to a different folder with different ports, and each will run independently with its own data.
-
-### How do I uninstall n8n?
-
-**Global Installation:**
-
-```bash
-npm uninstall -g n8n
-```
-
-Then delete your data directory (default: `%USERPROFILE%\.n8n`)
-
-**Folder Installation:**
-
-Simply delete the installation folder. To clean up PATH, run:
-
-```bash
-setx PATH "%PATH:;C:\your\n8n\folder\node_modules\.bin=%"
-```
-
-### How do I upgrade n8n?
-
-**Global Installation:**
+Native start scripts can optionally check for updates each time they run. You can also update manually:
 
 ```bash
 npm install -g n8n@latest
 ```
 
-**Folder Installation:**
-
-Navigate to your installation folder and run:
+For folder installs, run this in the installation folder:
 
 ```bash
 npm install n8n@latest
 ```
 
-Your data (workflows, credentials) will be preserved.
+For Docker installs, pull the latest image and recreate the container with the same volume. The Docker volume keeps your n8n data.
 
-### Can I move my installation to another computer?
+## 🛠️ Troubleshooting
 
-**Yes!** For folder installations:
+### Unsupported Node.js version
 
-1. **Copy your entire installation folder** including the `.n8n` subfolder
-2. **Install n8n on the new computer** to the same folder path (or update paths in `start_n8n.bat`)
-3. **Replace the new `.n8n` folder** with your backed-up `.n8n` folder
-4. This preserves your encryption key, workflows, credentials, and all settings
+Native npm installs require Node.js `20.19+` or `22.x LTS`. If you see a warning about Node.js 24, 25, or another unsupported current release, install Node.js 22 LTS and rerun the installer.
 
-For global installations:
+Check your version with:
 
-1. **Reinstall n8n globally** on the new machine: `npm install -g n8n`
-2. **Copy your backed-up `.n8n` folder** to `%USERPROFILE%\.n8n` on the new machine
-3. Run n8n and all your workflows will be there
+```bash
+node --version
+```
 
-**Important:** The `.n8n` folder contains your encryption key - without it, your data cannot be decrypted!
+### `isolated-vm`, `node-gyp`, Python, or build tools errors
+
+These usually happen when npm cannot use a prebuilt native package for your Node version and tries to compile locally. Use Node.js 22 LTS for native installs. Installing Python or Visual Studio build tools is usually the wrong fix for this installer path.
+
+### npm peer dependency warnings
+
+n8n has a large dependency tree, so npm may print peer dependency or deprecation warnings. Warnings are not always fatal. The installer fails only if npm exits with an error and n8n is not found afterward.
+
+### n8n starts but the browser cannot connect
+
+- Confirm the terminal or Docker container is still running.
+- Try `http://localhost:5678` or the custom port you selected.
+- Check whether the port is already in use: `netstat -ano | findstr :5678`.
+- Review Windows Firewall rules if you selected `0.0.0.0` or a LAN IP.
+
+### Windows settings file permission errors
+
+Use the generated `start_n8n.bat`. It disables strict Linux-style settings file permission enforcement for native Windows installs with `N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false`.
+
+### Docker container does not start
+
+Check container status and logs:
+
+```bash
+docker ps -a
+docker logs -f <container-name>
+```
+
+If the container name already exists, remove it only after confirming your data is in the Docker volume you expect:
+
+```bash
+docker rm -f <container-name>
+```
+
+### Cleanup warnings on Windows
+
+If npm reports `EPERM`, `EBUSY`, or locked `node_modules` folders, close terminals and editors using that install folder, stop any running n8n process, and try again. For folder installs, starting with an empty folder is often the cleanest recovery.
+
+For more help, visit the [n8n Community Forum](https://community.n8n.io).
+
+## ❓ Frequently Asked Questions
+
+### Can I run multiple n8n instances?
+
+Yes. Use folder-specific installs with different folders and ports, or Docker installs with different container names, volumes, and host ports.
 
 ### Does this work with Docker?
 
-Yes! Version 0.1.2 adds full Docker installation support. The installer can now create and configure n8n Docker containers with persistent data volumes. Choose the Docker installation option when running the installer (requires Docker Desktop).
+Yes. Docker Desktop must be installed and running. The installer creates one n8n container and one Docker volume, then documents the names in the generated `README.txt`.
 
 ### Is my data safe?
 
-**Yes!** All your workflows, credentials, and settings are stored locally in your `.n8n` data directory. This installer doesn't send any data anywhere.
+The installer stores data locally in your n8n user folder or Docker volume and does not send workflows or credentials anywhere. Your responsibility is backing up the full data folder or Docker volume so the encryption key is preserved.
 
-**Important:** Your data is encrypted with an auto-generated encryption key. Always backup your entire `.n8n` folder before:
+### How do I uninstall n8n?
 
-- Major updates or upgrades
-- Moving installations
-- System changes or reinstalls
+For global installs:
 
-Without the encryption key (stored in `.n8n`), your data cannot be recovered!
+```bash
+npm uninstall -g n8n
+```
 
-### Can I use this in a production environment?
+Then remove the generated `%USERPROFILE%\n8n` folder and your n8n data folder if you no longer need the data.
 
-This installer sets up n8n for you, but for production use, consider:
+For folder installs, delete the installation folder after backing up any data you want to keep. If the installer added `node_modules\.bin` to PATH, remove that entry from the user environment variables.
 
-- Using a process manager (PM2, NSSM)
-- Setting up automatic backups
-- Configuring HTTPS with proper certificates
-- Using authentication and proper security measures
-- Reviewing n8n's official production setup guide
+For Docker installs, remove the container and, only if you no longer need the data, the Docker volume:
 
-## 🚀 Upcoming Features
+```bash
+docker rm -f <container-name>
+docker volume rm <volume-name>
+```
 
-We're actively working on enhancing this installer! Planned features include:
+### Can I move my installation to another computer?
 
-- **Update Manager** - Check for and install n8n updates directly from the installer
-- **Backup/Restore Tools** - Easy backup and restoration of your workflows and settings
-- **Port Validation** - Automatic port availability checking before installation
-- **Docker Volume Management** - Tools for backing up and restoring Docker volumes
+Yes, but preserve the encryption key.
+
+- Native installs: back up the full n8n data folder and restore it before first launch on the new machine.
+- Folder installs: also copy or recreate the installation folder and update paths in `start_n8n.bat` if needed.
+- Docker installs: back up and restore the Docker volume, then recreate the container with the same volume.
+
+### Can I use this in production?
+
+This installer can help bootstrap a Windows installation, but production use needs additional hardening: HTTPS, authentication, backups, monitoring, process supervision, and the official n8n production guidance.
+
+## 🚀 Roadmap Ideas
+
+Future improvements that would fit this installer include:
+
+- Backup and restore helpers for native data folders
+- Docker volume backup and restore helpers
+- An uninstaller workflow
+- Process manager integration with PM2 or NSSM
+- More complete Docker update and recreate tooling
 
 Have a feature request? [Open an issue](https://github.com/web3Leander/n8n-windows-community-installer/issues)!
 

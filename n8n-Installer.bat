@@ -21,7 +21,7 @@ cls
 echo.
 echo  ══════════════════════════════════════════════════════════════
 echo      n8n Installation Wizard for Windows
-echo      Community Edition - Version 0.1.5
+echo      Community Edition - Version 0.1.6
 echo  ══════════════════════════════════════════════════════════════
 echo.
 echo  IMPORTANT NOTICE:
@@ -54,14 +54,32 @@ if !ERRORLEVEL! NEQ 0 (
     echo      Please install Node.js before continuing.
     echo      Download: https://nodejs.org/
     echo.
-    echo      Recommended: Node.js 18.x or later
+    echo      Recommended: Node.js 20.19+ or 22.x LTS
     echo.
     pause
     exit /b 1
 )
 
 for /f "tokens=*" %%i in ('node --version') do set NODE_VERSION=%%i
-echo  [✓] Node.js %NODE_VERSION%
+set "NODE_VERSION_NUMBER=%NODE_VERSION:~1%"
+for /f "tokens=1,2 delims=." %%a in ("%NODE_VERSION_NUMBER%") do (
+    set "NODE_MAJOR=%%a"
+    set "NODE_MINOR=%%b"
+)
+if not defined NODE_MINOR set "NODE_MINOR=0"
+
+set "NODE_SUPPORTED=NO"
+if "%NODE_MAJOR%"=="20" (
+    if %NODE_MINOR% GEQ 19 set "NODE_SUPPORTED=YES"
+) else if "%NODE_MAJOR%"=="22" (
+    set "NODE_SUPPORTED=YES"
+)
+
+if "%NODE_SUPPORTED%"=="YES" (
+    echo  [✓] Node.js %NODE_VERSION% - Supported by n8n 2.x
+) else (
+    echo  [!] Node.js %NODE_VERSION% - Unsupported for native n8n 2.x installs
+)
 
 echo.
 echo  Checking npm...
@@ -97,52 +115,76 @@ if !ERRORLEVEL! NEQ 0 (
     )
 )
 
+if "%NODE_SUPPORTED%"=="NO" (
+    if "%DOCKER_AVAILABLE%"=="YES" (
+        echo.
+        echo  [!] Native npm installations are disabled with Node.js %NODE_VERSION%
+        echo      Supported: Node.js 20.19+ or 22.x LTS
+        echo      You can still use the Docker installation option.
+    ) else (
+        echo.
+        echo  [✗] No supported installation method is available
+        echo      Native installs require Node.js 20.19+ or 22.x LTS.
+        echo      Docker Desktop is not available or not running.
+        echo.
+        echo      Install Node.js 22 LTS or start Docker Desktop, then rerun.
+        echo.
+        pause
+        exit /b 1
+    )
+)
+
 REM Check for updates (informational only)
 echo.
 echo  Checking for updates...
 echo.
 
 REM Get latest Node.js LTS version (approximate check)
-set "NODE_MAJOR=%NODE_VERSION:~1,2%"
-if %NODE_MAJOR% GEQ 22 (
-    echo  [✓] Node.js %NODE_VERSION% - Latest version
-) else if %NODE_MAJOR% GEQ 18 (
-    echo  [!] Node.js %NODE_VERSION% - Update available
-    echo      Visit: https://nodejs.org/
+if "%NODE_SUPPORTED%"=="YES" (
+    if "%NODE_MAJOR%"=="22" (
+        echo  [✓] Node.js %NODE_VERSION% - Supported LTS
+    ) else (
+        echo  [!] Node.js %NODE_VERSION% - Supported; Node.js 22.x LTS available
+        echo      Visit: https://nodejs.org/
+    )
 ) else (
-    echo  [!] Node.js %NODE_VERSION% - Outdated
-    echo      Recommended: Node.js 18.x or later
-    echo      Download: https://nodejs.org/
+    echo  [!] Node.js %NODE_VERSION% - Native npm installs unavailable
+    echo      Recommended: Node.js 20.19+ or 22.x LTS
+    echo      Visit: https://nodejs.org/
 )
 
 REM Get latest npm version info
 echo.
-for /f "tokens=*" %%i in ('npm view npm version 2^>nul') do set NPM_LATEST=%%i
+if "%NODE_SUPPORTED%"=="YES" (
+    for /f "tokens=*" %%i in ('npm view npm version 2^>nul') do set NPM_LATEST=%%i
 
-if defined NPM_LATEST (
-    if "%NPM_VERSION%"=="%NPM_LATEST%" (
-        echo  [✓] npm %NPM_VERSION% - Latest version
-    ) else (
-        echo  [!] npm %NPM_VERSION% - Update available: %NPM_LATEST%
-        echo.
-        set /p "UPDATE_NPM=      Update npm now? (Y/N): "
-        if /i "!UPDATE_NPM!"=="Y" (
+    if defined NPM_LATEST (
+        if "!NPM_VERSION!"=="!NPM_LATEST!" (
+            echo  [✓] npm !NPM_VERSION! - Latest version
+        ) else (
+            echo  [!] npm !NPM_VERSION! - Update available: !NPM_LATEST!
             echo.
-            echo      Installing npm update...
-            call npm install -g npm@latest
-            if !ERRORLEVEL! EQU 0 (
+            set /p "UPDATE_NPM=      Update npm now? (Y/N): "
+            if /i "!UPDATE_NPM!"=="Y" (
                 echo.
-                echo      [✓] npm updated successfully
-                for /f "tokens=*" %%i in ('npm --version') do set NPM_VERSION=%%i
-                echo      [✓] npm is now version !NPM_VERSION!
-            ) else (
-                echo.
-                echo      [✗] npm update failed, continuing
+                echo      Installing npm update...
+                call npm install -g npm@latest
+                if !ERRORLEVEL! EQU 0 (
+                    echo.
+                    echo      [✓] npm updated successfully
+                    for /f "tokens=*" %%i in ('npm --version') do set NPM_VERSION=%%i
+                    echo      [✓] npm is now version !NPM_VERSION!
+                ) else (
+                    echo.
+                    echo      [✗] npm update failed, continuing
+                )
             )
         )
+    ) else (
+        echo  [✓] npm %NPM_VERSION% - Latest version
     )
 ) else (
-    echo  [✓] npm %NPM_VERSION% - Latest version
+    echo  [!] npm update check skipped because native installs are disabled
 )
 
 echo.
@@ -150,7 +192,11 @@ echo  ════════════════════════�
 echo   Prerequisites Verified
 echo  ════════════════════════════════════════
 echo.
-echo   Node.js: %NODE_VERSION%
+if "%NODE_SUPPORTED%"=="YES" (
+    echo   Node.js: %NODE_VERSION%
+) else (
+    echo   Node.js: %NODE_VERSION% ^(native unsupported^)
+)
 echo   npm:     %NPM_VERSION%
 if "%DOCKER_AVAILABLE%"=="YES" (
     echo   Docker:  Available
@@ -226,6 +272,15 @@ if "%DOCKER_AVAILABLE%"=="YES" (
 )
 
 if "%N8N_TYPE%"=="1" (
+    if not "%NODE_SUPPORTED%"=="YES" (
+        echo.
+        echo  [✗] Global installation requires Node.js 20.19+ or 22.x LTS.
+        echo      Detected: %NODE_VERSION%
+        echo      Install Node.js 22 LTS or choose Docker if available.
+        echo.
+        pause
+        goto CUSTOM_INSTALL
+    )
     set "N8N_INSTALL_TYPE=GLOBAL"
     set "N8N_INSTALL_PATH=Global npm packages"
     
@@ -284,6 +339,15 @@ if "%N8N_TYPE%"=="1" (
     echo.
     echo  [✓] Selected: Global installation
 ) else if "%N8N_TYPE%"=="2" (
+    if not "%NODE_SUPPORTED%"=="YES" (
+        echo.
+        echo  [✗] Folder-specific installation requires Node.js 20.19+ or 22.x LTS.
+        echo      Detected: %NODE_VERSION%
+        echo      Install Node.js 22 LTS or choose Docker if available.
+        echo.
+        pause
+        goto CUSTOM_INSTALL
+    )
     set "N8N_INSTALL_TYPE=FOLDER"
     echo.
     echo  Enter the full folder path for n8n installation.
@@ -901,7 +965,7 @@ echo.
 
 echo  Starting n8n container: !DOCKER_CONTAINER!
 echo.
-docker run -d --name !DOCKER_CONTAINER! -p !N8N_PORT!:5678 -e GENERIC_TIMEZONE="!DOCKER_TIMEZONE!" -e TZ="!DOCKER_TIMEZONE!" -e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true -e N8N_RUNNERS_ENABLED=true -v !DOCKER_VOLUME!:/home/node/.n8n docker.n8n.io/n8nio/n8n 2>&1
+docker run -d --name !DOCKER_CONTAINER! -p !N8N_PORT!:5678 -e GENERIC_TIMEZONE="!DOCKER_TIMEZONE!" -e TZ="!DOCKER_TIMEZONE!" -v !DOCKER_VOLUME!:/home/node/.n8n docker.n8n.io/n8nio/n8n 2>&1
 if !ERRORLEVEL! NEQ 0 (
     echo.
     echo  [✗] Failed to start n8n container
@@ -953,6 +1017,7 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
             echo set N8N_PORT=!N8N_PORT!
             echo set N8N_PROTOCOL=http
             echo set N8N_HOST=!N8N_HOST!
+            echo set N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
             echo.
             echo cd /d "!N8N_INSTALL_PATH!"
             if "!AUTO_UPDATE!"=="YES" (
@@ -992,6 +1057,7 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
             echo set N8N_PORT=!N8N_PORT!
             echo set N8N_PROTOCOL=http
             echo set N8N_HOST=!N8N_HOST!
+            echo set N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
             echo.
             if "!AUTO_UPDATE!"=="YES" (
                 echo echo Checking for n8n updates...
@@ -1190,7 +1256,7 @@ echo  SYSTEM INFORMATION >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo  Installation Date: %DATE% %TIME% >> "!README_FILE!"
-echo  Installer Version: 0.1.5 >> "!README_FILE!"
+echo  Installer Version: 0.1.6 >> "!README_FILE!"
 echo  Node.js Version:   Run 'node --version' to check >> "!README_FILE!"
 echo  npm Version:       Run 'npm --version' to check >> "!README_FILE!"
 echo. >> "!README_FILE!"
