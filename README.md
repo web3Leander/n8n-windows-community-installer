@@ -1,4 +1,4 @@
-﻿# n8n Windows Community Installer
+# n8n Windows Community Installer
 
 An unofficial, community-created installation wizard for [n8n](https://n8n.io) on Windows systems.
 
@@ -296,7 +296,9 @@ docker run -d --name n8n --restart unless-stopped -p 5678:5678 -v n8n_data:/home
 
 ## Troubleshooting
 
-### Unsupported Node.js version
+<details>
+<summary><b>Unsupported Node.js version</b></summary>
+
 
 Native npm installs require Node.js `20.19+` or `22.x LTS`. If you see a warning about Node.js 24 or a newer release line, install Node.js 22 LTS and rerun the installer.
 
@@ -306,26 +308,46 @@ Check your version with:
 node --version
 ```
 
-### `isolated-vm`, `node-gyp`, Python, or build tools errors
+</details>
+
+<details>
+<summary><b>`isolated-vm`, `node-gyp`, Python, or build tools errors</b></summary>
+
 
 These usually happen when npm cannot use a prebuilt native package for your Node version and tries to compile locally. Use Node.js 22 LTS for native installs. Installing Python or Visual Studio build tools is usually the wrong fix for this installer path.
 
-### npm peer dependency warnings
+</details>
+
+<details>
+<summary><b>npm peer dependency warnings</b></summary>
+
 
 n8n has a large dependency tree, so npm may print peer dependency or deprecation warnings. Warnings are not always fatal. The installer fails only if npm exits with an error and n8n is not found afterward.
 
-### n8n starts but the browser cannot connect
+</details>
+
+<details>
+<summary><b>n8n starts but the browser cannot connect</b></summary>
+
 
 - Confirm the terminal or Docker container is still running.
 - Try `http://localhost:5678` or the custom port you selected.
 - Check whether the port is already in use: `netstat -ano | findstr :5678`.
 - Review Windows Firewall rules if you selected `0.0.0.0` or a LAN IP.
 
-### Windows settings file permission errors
+</details>
+
+<details>
+<summary><b>Windows settings file permission errors</b></summary>
+
 
 Use the generated `start_n8n.bat`. It disables strict Linux-style settings file permission enforcement for native Windows installs with `N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false`.
 
-### Docker container does not start
+</details>
+
+<details>
+<summary><b>Docker container does not start</b></summary>
+
 
 Check container status and logs:
 
@@ -340,27 +362,47 @@ If the container name already exists, remove it only after confirming your data 
 docker rm -f <container-name>
 ```
 
-### Cleanup warnings on Windows
+</details>
+
+<details>
+<summary><b>Cleanup warnings on Windows</b></summary>
+
 
 If npm reports `EPERM`, `EBUSY`, or locked `node_modules` folders, close terminals and editors using that install folder, stop any running n8n process, and try again. For folder installs, starting with an empty folder is often the cleanest recovery.
+
+</details>
 
 For more help, visit the [n8n Community Forum](https://community.n8n.io).
 
 ## Frequently Asked Questions
 
-### Can I run multiple n8n instances?
+<details>
+<summary><b>Can I run multiple n8n instances?</b></summary>
+
 
 Yes. Use folder-specific installs with different folders and ports, or Docker installs with different container names, volumes, and host ports.
 
-### Does this work with Docker?
+</details>
+
+<details>
+<summary><b>Does this work with Docker?</b></summary>
+
 
 Yes. Docker Desktop must be installed and running. The installer creates one n8n container and one Docker volume, then documents the names in the generated `README.txt`.
 
-### Is my data safe?
+</details>
+
+<details>
+<summary><b>Is my data safe?</b></summary>
+
 
 The installer stores data locally in your n8n user folder or Docker volume and does not send workflows or credentials anywhere. Your responsibility is backing up the full data folder or Docker volume so the encryption key is preserved.
 
-### How do I uninstall n8n?
+</details>
+
+<details>
+<summary><b>How do I uninstall n8n?</b></summary>
+
 
 For global installs:
 
@@ -379,7 +421,11 @@ docker rm -f <container-name>
 docker volume rm <volume-name>
 ```
 
-### Can I move my installation to another computer?
+</details>
+
+<details>
+<summary><b>Can I move my installation to another computer?</b></summary>
+
 
 Yes, but preserve the encryption key.
 
@@ -387,9 +433,15 @@ Yes, but preserve the encryption key.
 - Folder installs: also copy or recreate the installation folder and update paths in `start_n8n.bat` if needed.
 - Docker installs: back up and restore the Docker volume, then recreate the container with the same volume.
 
-### Can I use this in production?
+</details>
+
+<details>
+<summary><b>Can I use this in production?</b></summary>
+
 
 This installer can help bootstrap a Windows installation, but production use needs additional hardening: HTTPS, authentication, backups, monitoring, process supervision, and the official n8n production guidance.
+
+</details>
 
 ## Additional Resources
 
