@@ -3,7 +3,7 @@
 An unofficial, community-created installation wizard for [n8n](https://n8n.io) on Windows systems.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.6-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
+[![Version](https://img.shields.io/badge/version-0.1.7-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
 
 ## ⚠️ IMPORTANT DISCLAIMER
 
@@ -33,7 +33,8 @@ It is designed for local development, personal automation, and small Windows-hos
 
 - **n8n 2.x compatibility checks**
   - Native installs require Node.js `20.19+` or `22.x LTS`
-  - Unsupported current releases such as Node.js 25 are blocked before `npm install`
+  - npm is capped at `10.x`, the version bundled with Node.js 22 LTS
+  - Newer release lines are blocked before `npm install`
   - Docker installs avoid forcing external task-runner flags and let n8n use its default runner behavior
 
 - **Guided setup and safety checks**
@@ -64,12 +65,13 @@ It is designed for local development, personal automation, and small Windows-hos
 
 ### Native npm requirements
 
-- **Node.js:** `20.19+` or `22.x LTS` from [nodejs.org](https://nodejs.org/)
+- **Node.js:** `20.19+` or `22.x LTS` from [nodejs.org](https://nodejs.org/), with `22.x LTS` recommended
+- **npm:** `10.x`, as bundled with Node.js 22 LTS
 - **npm:** Included with supported Node.js versions
-- **Disk space:** At least 1.2 GB free on the target drive
+- **Disk space:** At least 2 GB free on the target drive
 - **Administrator rights:** Optional, but recommended for global installs and all-users shortcuts
 
-Avoid Node.js 24+, Node.js 25, and other unsupported current release lines for native npm installs. They can force native dependency compilation and fail with `node-gyp`, Python, or Visual Studio build-tool errors.
+Avoid Node.js 24 and newer for native npm installs. Node.js and npm ship as one package, and newer Node.js lines bundle newer npm. npm 12 blocks dependency install scripts by default, which leaves `sqlite3` without its native binary and stops n8n from opening its database. Node.js 22 LTS with npm 10 is the pairing this installer targets.
 
 ### Docker requirements
 
@@ -240,7 +242,7 @@ For Docker installs, pull the latest image and recreate the container with the s
 
 ### Unsupported Node.js version
 
-Native npm installs require Node.js `20.19+` or `22.x LTS`. If you see a warning about Node.js 24, 25, or another unsupported current release, install Node.js 22 LTS and rerun the installer.
+Native npm installs require Node.js `20.19+` or `22.x LTS`. If you see a warning about Node.js 24 or a newer release line, install Node.js 22 LTS and rerun the installer.
 
 Check your version with:
 

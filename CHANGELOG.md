@@ -7,6 +7,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-08-02
+
+### Changed
+
+- Capped npm at `10.x`, the version bundled with Node.js 22 LTS. The update prompt now offers the highest supported npm instead of `npm@latest`
+- Kept Node.js at `20.19+` or `22.x LTS`. Node.js and npm ship as one package, so allowing a newer Node.js also pulls in a newer npm
+- Raised the disk space requirement from 1.2 GB to 2 GB, which reflects the real size on disk of a folder install
+- Quietened npm output during install and update with `--loglevel=error --no-fund --no-audit`. Deprecation warnings from n8n's dependency tree are no longer shown; errors still are
+
+### Fixed
+
+- Native installs no longer produce an n8n that cannot start. npm 12 blocks dependency install scripts by default, which left `sqlite3` without its native binary and caused `SQLite package has not been found installed` on startup. The npm cap prevents this, and both install commands also pass `--allow-scripts=sqlite3` for anyone who already upgraded npm independently
+- Warning markers now render as `[!]` instead of `[]`. Delayed expansion was consuming the unescaped exclamation mark in all 12 warning messages
+
 ## [0.1.6] - 2026-05-01
 
 ### Changed

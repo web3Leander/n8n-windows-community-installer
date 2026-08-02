@@ -8,6 +8,7 @@ setlocal enabledelayedexpansion
 REM Catch all exits
 set "SCRIPTDIR=%~dp0"
 if not defined SCRIPTDIR set "SCRIPTDIR=%CD%"
+
 goto START
 
 :END_SCRIPT
@@ -21,7 +22,7 @@ cls
 echo.
 echo  ══════════════════════════════════════════════════════════════
 echo      n8n Installation Wizard for Windows
-echo      Community Edition - Version 0.1.6
+echo      Community Edition - Version 0.1.7
 echo  ══════════════════════════════════════════════════════════════
 echo.
 echo  IMPORTANT NOTICE:
@@ -54,7 +55,8 @@ if !ERRORLEVEL! NEQ 0 (
     echo      Please install Node.js before continuing.
     echo      Download: https://nodejs.org/
     echo.
-    echo      Recommended: Node.js 20.19+ or 22.x LTS
+    echo      Recommended: Node.js 22.x LTS
+    echo      Supported:   Node.js 20.19+ or 22.x LTS
     echo.
     pause
     exit /b 1
@@ -68,6 +70,9 @@ for /f "tokens=1,2 delims=." %%a in ("%NODE_VERSION_NUMBER%") do (
 )
 if not defined NODE_MINOR set "NODE_MINOR=0"
 
+REM Node.js 22.x LTS is the ceiling. It ships npm 10, which is the pairing this
+REM installer targets. Newer Node ships newer npm, and npm 12 blocks dependency
+REM install scripts, which leaves sqlite3 without its native binary.
 set "NODE_SUPPORTED=NO"
 if "%NODE_MAJOR%"=="20" (
     if %NODE_MINOR% GEQ 19 set "NODE_SUPPORTED=YES"
@@ -78,7 +83,7 @@ if "%NODE_MAJOR%"=="20" (
 if "%NODE_SUPPORTED%"=="YES" (
     echo  [✓] Node.js %NODE_VERSION% - Supported by n8n 2.x
 ) else (
-    echo  [!] Node.js %NODE_VERSION% - Unsupported for native n8n 2.x installs
+    echo  [^^!] Node.js %NODE_VERSION% - Unsupported for native n8n 2.x installs
 )
 
 echo.
@@ -118,7 +123,7 @@ if !ERRORLEVEL! NEQ 0 (
 if "%NODE_SUPPORTED%"=="NO" (
     if "%DOCKER_AVAILABLE%"=="YES" (
         echo.
-        echo  [!] Native npm installations are disabled with Node.js %NODE_VERSION%
+        echo  [^^!] Native npm installations are disabled with Node.js %NODE_VERSION%
         echo      Supported: Node.js 20.19+ or 22.x LTS
         echo      You can still use the Docker installation option.
     ) else (
@@ -144,31 +149,33 @@ if "%NODE_SUPPORTED%"=="YES" (
     if "%NODE_MAJOR%"=="22" (
         echo  [✓] Node.js %NODE_VERSION% - Supported LTS
     ) else (
-        echo  [!] Node.js %NODE_VERSION% - Supported; Node.js 22.x LTS available
+        echo  [^^!] Node.js %NODE_VERSION% - Supported; Node.js 22.x LTS available
         echo      Visit: https://nodejs.org/
     )
 ) else (
-    echo  [!] Node.js %NODE_VERSION% - Native npm installs unavailable
-    echo      Recommended: Node.js 20.19+ or 22.x LTS
+    echo  [^^!] Node.js %NODE_VERSION% - Native npm installs unavailable
+    echo      Recommended: Node.js 22.x LTS
     echo      Visit: https://nodejs.org/
 )
 
-REM Get latest npm version info
+REM Get highest supported npm version. npm is capped at 10.x to match the npm
+REM that ships with Node.js 22 LTS. npm 12 blocks dependency install scripts,
+REM which leaves sqlite3 without its native binary and stops n8n from starting.
 echo.
 if "%NODE_SUPPORTED%"=="YES" (
-    for /f "tokens=*" %%i in ('npm view npm version 2^>nul') do set NPM_LATEST=%%i
+    for /f "tokens=*" %%i in ('npm view npm@next-10 version 2^>nul') do set NPM_MAX=%%i
 
-    if defined NPM_LATEST (
-        if "!NPM_VERSION!"=="!NPM_LATEST!" (
-            echo  [✓] npm !NPM_VERSION! - Latest version
+    if defined NPM_MAX (
+        if "!NPM_VERSION!"=="!NPM_MAX!" (
+            echo  [✓] npm !NPM_VERSION! - Highest supported version
         ) else (
-            echo  [!] npm !NPM_VERSION! - Update available: !NPM_LATEST!
+            echo  [^^!] npm !NPM_VERSION! - Supported version available: !NPM_MAX!
             echo.
-            set /p "UPDATE_NPM=      Update npm now? (Y/N): "
+            set /p "UPDATE_NPM=      Install npm !NPM_MAX! now? (Y/N): "
             if /i "!UPDATE_NPM!"=="Y" (
                 echo.
-                echo      Installing npm update...
-                call npm install -g npm@latest
+                echo      Installing npm !NPM_MAX!...
+                call npm install -g npm@!NPM_MAX! --loglevel=error --no-fund --no-audit
                 if !ERRORLEVEL! EQU 0 (
                     echo.
                     echo      [✓] npm updated successfully
@@ -181,10 +188,10 @@ if "%NODE_SUPPORTED%"=="YES" (
             )
         )
     ) else (
-        echo  [✓] npm %NPM_VERSION% - Latest version
+        echo  [✓] npm %NPM_VERSION% - version check unavailable, continuing
     )
 ) else (
-    echo  [!] npm update check skipped because native installs are disabled
+    echo  [^^!] npm update check skipped because native installs are disabled
 )
 
 echo.
@@ -209,7 +216,7 @@ echo.
 echo  Checking default port 5678...
 netstat -an 2>nul | findstr /C:":5678 " | findstr /C:"LISTENING" >nul 2>&1
 if !ERRORLEVEL! EQU 0 (
-    echo  [!] Warning: Port 5678 is already in use
+    echo  [^^!] Warning: Port 5678 is already in use
     echo      You will need to choose a different port during setup
     set "DEFAULT_PORT_IN_USE=YES"
 ) else (
@@ -358,7 +365,7 @@ if "%N8N_TYPE%"=="1" (
     set /p "N8N_INSTALL_PATH=  Path: "
     if not exist "!N8N_INSTALL_PATH!" (
         echo.
-        echo  [!] Folder does not exist: !N8N_INSTALL_PATH!
+        echo  [^^!] Folder does not exist: !N8N_INSTALL_PATH!
         echo.
         set /p "CREATE_N8N_DIR=  Create this folder? (Y/N): "
         if /i not "!CREATE_N8N_DIR!"=="Y" (
@@ -496,18 +503,18 @@ if "!N8N_INSTALL_TYPE!"=="GLOBAL" (
     set "TARGET_DRIVE=!N8N_INSTALL_PATH:~0,2!"
 )
 
-REM Check disk space on target drive (need at least 1.2GB) - skip for Docker
+REM Check disk space on target drive (need at least 2GB) - skip for Docker
 if not "!N8N_INSTALL_TYPE!"=="DOCKER" (
 echo.
 echo  Checking disk space on !TARGET_DRIVE!...
 for /f "tokens=3" %%a in ('dir !TARGET_DRIVE!\ 2^>nul ^| findstr /C:"bytes free"') do set "FREE_SPACE_STR=%%a"
 set "FREE_SPACE_STR=!FREE_SPACE_STR:,=!"
 set /a "FREE_SPACE_MB=!FREE_SPACE_STR:~0,-6!" 2>nul
-if !FREE_SPACE_MB! GEQ 1200 (
+if !FREE_SPACE_MB! GEQ 2048 (
     echo  [✓] Disk space on !TARGET_DRIVE!: !FREE_SPACE_MB! MB available
 ) else if !FREE_SPACE_MB! GEQ 1 (
-    echo  [!] Warning: Low disk space on !TARGET_DRIVE! ^(!FREE_SPACE_MB! MB^)
-    echo      n8n installation requires approximately 1.2 GB
+    echo  [^^!] Warning: Low disk space on !TARGET_DRIVE! ^(!FREE_SPACE_MB! MB^)
+    echo      n8n installation requires approximately 2 GB
     echo.
     set /p "CONTINUE_LOW_SPACE=  Continue anyway? (Y/N): "
     if /i not "!CONTINUE_LOW_SPACE!"=="Y" (
@@ -527,7 +534,7 @@ if !FREE_SPACE_MB! GEQ 1200 (
     )
 ) else (
     REM Fallback if calculation failed - just note we couldn't check
-    echo  [i] Disk space: Could not determine ^(ensure 1.2+ GB free on !TARGET_DRIVE!^)
+    echo  [i] Disk space: Could not determine ^(ensure 2+ GB free on !TARGET_DRIVE!^)
 )
 )
 
@@ -681,7 +688,7 @@ echo  n8n Network Configuration
 echo  ────────────────────────────────────────
 echo.
 if "!DEFAULT_PORT_IN_USE!"=="YES" (
-    echo  [!] Note: Port 5678 is in use - please choose a different port
+    echo  [^^!] Note: Port 5678 is in use - please choose a different port
     echo.
 )
 if "%N8N_INSTALL_TYPE%"=="DOCKER" (
@@ -881,7 +888,10 @@ exit /b 1
 echo  Running: npm install -g n8n
 echo  This may take a few minutes...
 echo.
-call npm install -g n8n
+REM --allow-scripts is required on npm 12+, which blocks dependency install
+REM scripts by default. Without it sqlite3 never builds. Older npm ignores it.
+REM --loglevel=error hides npm's deprecation warning spam but still shows errors.
+call npm install -g n8n --allow-scripts=sqlite3 --loglevel=error --no-fund --no-audit
 echo.
 echo  Verifying installation...
 where n8n >nul 2>&1
@@ -899,14 +909,15 @@ goto CREATE_START_SCRIPT
 echo  Running: npm install n8n in !N8N_INSTALL_PATH!
 echo  This may take a few minutes...
 echo.
-cd /d "!N8N_INSTALL_PATH!"
-if !ERRORLEVEL! NEQ 0 (
+REM cd /d leaves ERRORLEVEL untouched on success, so test the path instead.
+if not exist "!N8N_INSTALL_PATH!\" (
     echo.
     echo  [✗] Could not change to directory: !N8N_INSTALL_PATH!
     pause
     exit /b 1
 )
-call npm install n8n
+cd /d "!N8N_INSTALL_PATH!"
+call npm install n8n --allow-scripts=sqlite3 --loglevel=error --no-fund --no-audit
 echo.
 echo  Verifying installation...
 if not exist "!N8N_INSTALL_PATH!\node_modules\n8n" (
@@ -984,7 +995,7 @@ REM Verify container is running
 docker ps --filter name=!DOCKER_CONTAINER! --filter status=running | find "!DOCKER_CONTAINER!" >nul
 if !ERRORLEVEL! NEQ 0 (
     echo.
-    echo  [!] Warning: Container may not be running properly
+    echo  [^^!] Warning: Container may not be running properly
     echo  Check logs with: docker logs !DOCKER_CONTAINER!
 )
 goto CREATE_START_SCRIPT
@@ -1033,7 +1044,7 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
                 echo     if /i "^^!DO_UPDATE^^!"=="Y" ^(
                 echo         echo.
                 echo         echo   Updating n8n...
-                echo         npm update n8n
+                echo         npm update n8n --allow-scripts=sqlite3 --loglevel=error --no-fund --no-audit
                 echo         echo.
                 echo         echo   [OK] Update complete
                 echo         echo.
@@ -1071,7 +1082,7 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
                 echo     if /i "^^!DO_UPDATE^^!"=="Y" ^(
                 echo         echo.
                 echo         echo   Updating n8n globally...
-                echo         npm update -g n8n
+                echo         npm update -g n8n --allow-scripts=sqlite3 --loglevel=error --no-fund --no-audit
                 echo         echo.
                 echo         echo   [OK] Update complete
                 echo         echo.
@@ -1103,7 +1114,7 @@ if "!CREATE_SHORTCUT!"=="YES" (
     if exist "!SHORTCUT_FILE!" (
         echo  [OK] Desktop shortcut created: !SHORTCUT_FILE!
     ) else (
-        echo  [!] Could not create desktop shortcut
+        echo  [^^!] Could not create desktop shortcut
     )
 )
 
