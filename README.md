@@ -424,4 +424,4 @@ Created by [web3Leander](https://github.com/web3Leander)
 
 ---
 
-Made for the n8n community
+Made with ❤️ for the n8n community
