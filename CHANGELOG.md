@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Kept Node.js at `20.19+` or `22.x LTS`. Node.js and npm ship as one package, so allowing a newer Node.js also pulls in a newer npm
 - Raised the disk space requirement from 1.2 GB to 2 GB, which reflects the real size on disk of a folder install
 - Quietened npm output during install and update with `--loglevel=error --no-fund --no-audit`. Deprecation warnings from n8n's dependency tree are no longer shown; errors still are
+- Added `N8N_UNVERIFIED_PACKAGES_ENABLED=true` to generated start scripts to allow UI installation of community packages without deprecation warnings
+- Enabled automatic execution data pruning (`EXECUTIONS_DATA_PRUNE=true`, `EXECUTIONS_DATA_MAX_AGE=168`) in generated start scripts to keep the SQLite database lean over time
+- Added `--restart unless-stopped` flag to Docker container creation for automatic restart on reboot
+- Documented `WEBHOOK_URL` and added explicit encryption key backup reminders in generated `README.txt`
 
 ### Fixed
 

@@ -976,7 +976,7 @@ echo.
 
 echo  Starting n8n container: !DOCKER_CONTAINER!
 echo.
-docker run -d --name !DOCKER_CONTAINER! -p !N8N_PORT!:5678 -e GENERIC_TIMEZONE="!DOCKER_TIMEZONE!" -e TZ="!DOCKER_TIMEZONE!" -v !DOCKER_VOLUME!:/home/node/.n8n docker.n8n.io/n8nio/n8n 2>&1
+docker run -d --name !DOCKER_CONTAINER! --restart unless-stopped -p !N8N_PORT!:5678 -e GENERIC_TIMEZONE="!DOCKER_TIMEZONE!" -e TZ="!DOCKER_TIMEZONE!" -v !DOCKER_VOLUME!:/home/node/.n8n docker.n8n.io/n8nio/n8n 2>&1
 if !ERRORLEVEL! NEQ 0 (
     echo.
     echo  [✗] Failed to start n8n container
@@ -1029,6 +1029,10 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
             echo set N8N_PROTOCOL=http
             echo set N8N_HOST=!N8N_HOST!
             echo set N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+            echo set N8N_UNVERIFIED_PACKAGES_ENABLED=true
+            echo set EXECUTIONS_DATA_PRUNE=true
+            echo set EXECUTIONS_DATA_MAX_AGE=168
+            echo REM set WEBHOOK_URL=https://n8n.example.com/
             echo.
             echo cd /d "!N8N_INSTALL_PATH!"
             if "!AUTO_UPDATE!"=="YES" (
@@ -1069,6 +1073,10 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
             echo set N8N_PROTOCOL=http
             echo set N8N_HOST=!N8N_HOST!
             echo set N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+            echo set N8N_UNVERIFIED_PACKAGES_ENABLED=true
+            echo set EXECUTIONS_DATA_PRUNE=true
+            echo set EXECUTIONS_DATA_MAX_AGE=168
+            echo REM set WEBHOOK_URL=https://n8n.example.com/
             echo.
             if "!AUTO_UPDATE!"=="YES" (
                 echo echo Checking for n8n updates...
@@ -1215,6 +1223,12 @@ echo  N8N_USER_FOLDER:  !N8N_DATA_PATH! >> "!README_FILE!"
 echo  N8N_HOST:         !N8N_HOST! >> "!README_FILE!"
 echo  N8N_PORT:         !N8N_PORT! >> "!README_FILE!"
 echo  N8N_PROTOCOL:     http >> "!README_FILE!"
+echo  N8N_UNVERIFIED_PACKAGES_ENABLED: true ^(allows UI community package installs^) >> "!README_FILE!"
+echo  EXECUTIONS_DATA_PRUNE:           true ^(keeps SQLite database lean^) >> "!README_FILE!"
+echo  EXECUTIONS_DATA_MAX_AGE:         168 ^(prunes executions older than 7 days^) >> "!README_FILE!"
+echo. >> "!README_FILE!"
+echo  To expose n8n to external webhooks, set WEBHOOK_URL in start_n8n.bat: >> "!README_FILE!"
+echo  set WEBHOOK_URL=https://n8n.example.com/ >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo  IMPORTANT: n8n automatically creates a .n8n subfolder inside >> "!README_FILE!"
 echo  N8N_USER_FOLDER for storing all data. Your actual data will be at: >> "!README_FILE!"
@@ -1222,6 +1236,10 @@ echo  !N8N_DATA_PATH!\.n8n\ >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo  This folder contains your workflows, credentials, settings, and >> "!README_FILE!"
 echo  database. It will be created automatically when you first run n8n. >> "!README_FILE!"
+echo. >> "!README_FILE!"
+echo  ENCRYPTION KEY BACKUP REMINDER: >> "!README_FILE!"
+echo  • n8n saves its auto-generated encryption key in !N8N_DATA_PATH!\.n8n\config >> "!README_FILE!"
+echo  • ALWAYS back up this file before upgrades or moving instances! >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo  OFFICIAL n8n RESOURCES >> "!README_FILE!"
@@ -1267,7 +1285,7 @@ echo  SYSTEM INFORMATION >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo  Installation Date: %DATE% %TIME% >> "!README_FILE!"
-echo  Installer Version: 0.1.6 >> "!README_FILE!"
+echo  Installer Version: 0.1.7 >> "!README_FILE!"
 echo  Node.js Version:   Run 'node --version' to check >> "!README_FILE!"
 echo  npm Version:       Run 'npm --version' to check >> "!README_FILE!"
 echo. >> "!README_FILE!"
