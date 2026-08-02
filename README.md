@@ -50,7 +50,7 @@ It is designed for local development, personal automation, and small Windows-hos
 - **Guided setup and safety checks**
   - Checks Node.js, npm, Docker availability, and default port `5678`
   - Detects existing global, folder, or Docker installations before overwriting
-  - Checks available disk space for native installs
+  - Checks available disk space for native and Docker installs
   - Prompts for folder paths, Docker container/volume names, host, port, update checks, and shortcuts
 
 - **Windows-friendly launch configuration**
@@ -85,7 +85,7 @@ Avoid Node.js 24 and newer for native npm installs. Node.js and npm ship as one 
 ### Docker requirements
 
 - **Docker Desktop:** Installed and running from [docker.com](https://www.docker.com/products/docker-desktop)
-- **Docker volume storage:** Enough space for workflows, credentials, logs, and package data
+- **Disk space:** At least 3 GB free on the system drive for the Docker image (~2.5 GB) and volume data
 
 If Docker is available, the installer can offer Docker even when the detected Node.js version is not supported for native installs.
 

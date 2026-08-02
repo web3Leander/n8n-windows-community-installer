@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Capped npm at `10.x`, the version bundled with Node.js 22 LTS. The update prompt now offers the highest supported npm instead of `npm@latest`
 - Kept Node.js at `20.19+` or `22.x LTS`. Node.js and npm ship as one package, so allowing a newer Node.js also pulls in a newer npm
-- Raised the disk space requirement from 1.2 GB to 2 GB, which reflects the real size on disk of a folder install
+- Raised the disk space requirement from 1.2 GB to 2 GB for native installs and added a 3 GB check for Docker installs (reflecting the ~2.5 GB Docker image size)
 - Quietened npm output during install and update with `--loglevel=error --no-fund --no-audit`. Deprecation warnings from n8n's dependency tree are no longer shown; errors still are
 - Added `N8N_UNVERIFIED_PACKAGES_ENABLED=true` to generated start scripts to allow UI installation of community packages without deprecation warnings
 - Added optional execution data pruning variables (`REM set EXECUTIONS_DATA_PRUNE=true`, `REM set EXECUTIONS_DATA_MAX_AGE=168`) commented out in generated start scripts so users can enable pruning if desired
@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Native installs no longer produce an n8n that cannot start. npm 12 blocks dependency install scripts by default, which left `sqlite3` without its native binary and caused `SQLite package has not been found installed` on startup. The npm cap prevents this, and both install commands also pass `--allow-scripts=sqlite3` for anyone who already upgraded npm independently
 - Warning markers now render as `[!]` instead of `[]`. Delayed expansion was consuming the unescaped exclamation mark in all 12 warning messages
+- Fixed evaluation of `N8N_INSTALL_TYPE` in batch script so Docker installations properly prompt for custom container name, volume name, and port
 
 ## [0.1.6] - 2026-05-01
 

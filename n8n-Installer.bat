@@ -495,26 +495,31 @@ REM Set data path based on installation type
 if "!N8N_INSTALL_TYPE!"=="GLOBAL" (
     set "N8N_DATA_PATH=%USERPROFILE%\.n8n"
     set "TARGET_DRIVE=%SYSTEMDRIVE%"
+    set "REQUIRED_MB=2048"
+    set "REQUIRED_GB_STR=2 GB"
 ) else if "!N8N_INSTALL_TYPE!"=="DOCKER" (
     set "N8N_DATA_PATH=Docker Volume"
-    set "TARGET_DRIVE="
+    set "TARGET_DRIVE=%SYSTEMDRIVE%"
+    set "REQUIRED_MB=3072"
+    set "REQUIRED_GB_STR=3 GB"
 ) else (
     set "N8N_DATA_PATH=!N8N_INSTALL_PATH!"
     set "TARGET_DRIVE=!N8N_INSTALL_PATH:~0,2!"
+    set "REQUIRED_MB=2048"
+    set "REQUIRED_GB_STR=2 GB"
 )
 
-REM Check disk space on target drive (need at least 2GB) - skip for Docker
-if not "!N8N_INSTALL_TYPE!"=="DOCKER" (
+REM Check disk space on target drive (2GB for native, 3GB for Docker image + volume)
 echo.
 echo  Checking disk space on !TARGET_DRIVE!...
 for /f "tokens=3" %%a in ('dir !TARGET_DRIVE!\ 2^>nul ^| findstr /C:"bytes free"') do set "FREE_SPACE_STR=%%a"
 set "FREE_SPACE_STR=!FREE_SPACE_STR:,=!"
 set /a "FREE_SPACE_MB=!FREE_SPACE_STR:~0,-6!" 2>nul
-if !FREE_SPACE_MB! GEQ 2048 (
+if !FREE_SPACE_MB! GEQ !REQUIRED_MB! (
     echo  [✓] Disk space on !TARGET_DRIVE!: !FREE_SPACE_MB! MB available
 ) else if !FREE_SPACE_MB! GEQ 1 (
     echo  [^^!] Warning: Low disk space on !TARGET_DRIVE! ^(!FREE_SPACE_MB! MB^)
-    echo      n8n installation requires approximately 2 GB
+    echo      n8n installation requires approximately !REQUIRED_GB_STR!
     echo.
     set /p "CONTINUE_LOW_SPACE=  Continue anyway? (Y/N): "
     if /i not "!CONTINUE_LOW_SPACE!"=="Y" (
@@ -534,8 +539,7 @@ if !FREE_SPACE_MB! GEQ 2048 (
     )
 ) else (
     REM Fallback if calculation failed - just note we couldn't check
-    echo  [i] Disk space: Could not determine ^(ensure 2+ GB free on !TARGET_DRIVE!^)
-)
+    echo  [i] Disk space: Could not determine ^(ensure !REQUIRED_GB_STR! free on !TARGET_DRIVE!^)
 )
 
 echo.
@@ -546,8 +550,9 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
     echo      ^(n8n automatically creates the .n8n subfolder^)
 )
 echo.
+set "CONFIRM_N8N="
 set /p "CONFIRM_N8N=  Confirm choice? (Y/N): "
-if /i not "%CONFIRM_N8N%"=="Y" (
+if /i not "!CONFIRM_N8N!"=="Y" (
     cls
     echo.
     echo  ════════════════════════════════════════
@@ -561,7 +566,7 @@ if /i not "%CONFIRM_N8N%"=="Y" (
 )
 
 REM Sub-step: Docker Configuration (if Docker installation selected)
-if not "%N8N_INSTALL_TYPE%"=="DOCKER" goto SKIP_DOCKER_CONFIG
+if not "!N8N_INSTALL_TYPE!"=="DOCKER" goto SKIP_DOCKER_CONFIG
 
 :ASK_DOCKER_CONFIG
 echo.
@@ -577,6 +582,7 @@ echo  Container Name:
 echo  • Press Enter for default: n8n
 echo  • Or enter a custom name (no spaces)
 echo.
+set "DOCKER_CONTAINER_INPUT="
 set /p "DOCKER_CONTAINER_INPUT=  Container name (default: n8n): "
 if "!DOCKER_CONTAINER_INPUT!"=="" set "DOCKER_CONTAINER=n8n"
 if defined DOCKER_CONTAINER_INPUT set "DOCKER_CONTAINER=!DOCKER_CONTAINER_INPUT!"
@@ -595,6 +601,7 @@ if !ERRORLEVEL! EQU 0 (
     echo  1. Remove the existing container and create new
     echo  2. Choose a different container name
     echo.
+    set "CONTAINER_ACTION="
     set /p "CONTAINER_ACTION=  Your choice (1 or 2): "
     if "!CONTAINER_ACTION!"=="1" (
         echo.
@@ -632,6 +639,7 @@ echo  Data Volume Name:
 echo  • Press Enter for default: n8n_data
 echo  • Or enter a custom volume name
 echo.
+set "DOCKER_VOLUME_INPUT="
 set /p "DOCKER_VOLUME_INPUT=  Volume name (default: n8n_data): "
 if "!DOCKER_VOLUME_INPUT!"=="" set "DOCKER_VOLUME=n8n_data"
 if defined DOCKER_VOLUME_INPUT set "DOCKER_VOLUME=!DOCKER_VOLUME_INPUT!"
@@ -665,6 +673,7 @@ echo      Container: !DOCKER_CONTAINER!
 echo      Volume:    !DOCKER_VOLUME!
 echo      Timezone:  !DOCKER_TIMEZONE! (auto-detected)
 echo.
+set "CONFIRM_DOCKER="
 set /p "CONFIRM_DOCKER=  Confirm Docker settings? (Y/N): "
 if /i not "!CONFIRM_DOCKER!"=="Y" (
     cls
@@ -691,7 +700,7 @@ if "!DEFAULT_PORT_IN_USE!"=="YES" (
     echo  [^^!] Note: Port 5678 is in use - please choose a different port
     echo.
 )
-if "%N8N_INSTALL_TYPE%"=="DOCKER" (
+if "!N8N_INSTALL_TYPE!"=="DOCKER" (
     echo  Configure the port for n8n to run on.
     echo  Docker will map this port to the container.
     echo.
@@ -700,6 +709,7 @@ if "%N8N_INSTALL_TYPE%"=="DOCKER" (
     echo  • Or enter a custom port (1024-65535)
     echo    Examples: 8080, 3000, 5000
     echo.
+    set "N8N_PORT_INPUT="
     set /p "N8N_PORT_INPUT=  Port (default: 5678): "
     if "!N8N_PORT_INPUT!"=="" set "N8N_PORT=5678"
     if defined N8N_PORT_INPUT set "N8N_PORT=!N8N_PORT_INPUT!"
@@ -720,6 +730,7 @@ echo  Configure the host and port for n8n to run on.
     echo  • Or enter a custom IP address
     echo    Examples: 0.0.0.0 (all interfaces), 192.168.1.100 (specific local IP)
     echo.
+    set "N8N_HOST_INPUT="
     set /p "N8N_HOST_INPUT=  Host (default: 127.0.0.1): "
     if "!N8N_HOST_INPUT!"=="" set "N8N_HOST=127.0.0.1"
     if defined N8N_HOST_INPUT (
@@ -732,6 +743,7 @@ echo  Configure the host and port for n8n to run on.
     echo  • Or enter a custom port (1024-65535)
     echo    Examples: 8080, 3000, 5000
     echo.
+    set "N8N_PORT_INPUT="
     set /p "N8N_PORT_INPUT=  Port (default: 5678): "
     if "!N8N_PORT_INPUT!"=="" set "N8N_PORT=5678"
     if defined N8N_PORT_INPUT (
@@ -746,6 +758,7 @@ echo  Configure the host and port for n8n to run on.
 
 :CONFIRM_NETWORK
 echo.
+set "CONFIRM_NETWORK="
 set /p "CONFIRM_NETWORK=  Confirm network settings? (Y/N): "
 if /i not "!CONFIRM_NETWORK!"=="Y" (
     cls
