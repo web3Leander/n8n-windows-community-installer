@@ -5,7 +5,7 @@ An unofficial, community-created installation wizard for [n8n](https://n8n.io) o
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-0.1.7-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
 
-> ⚠️ **IMPORTANT DISCLAIMER**
+> **IMPORTANT DISCLAIMER**
 >
 > **This is an UNOFFICIAL community-made installer and is NOT affiliated with, endorsed by, or connected to n8n.io or n8n GmbH in any way.**
 >
@@ -17,24 +17,24 @@ An unofficial, community-created installation wizard for [n8n](https://n8n.io) o
 >
 > For issues with this installer, please open an issue in this repository.
 
-## 📍 Quick Navigation
+## Quick Navigation
 
-[Overview](#-overview) •
-[Features](#-features) •
-[System Requirements](#-system-requirements) •
-[Quick Start](#-quick-start) •
-[Installation Options](#-installation-options) •
-[Security & Task Runners](#-security--task-runners) •
-[Troubleshooting](#-troubleshooting) •
-[FAQ](#-frequently-asked-questions)
+[Overview](#overview) •
+[Features](#features) •
+[System Requirements](#system-requirements) •
+[Quick Start](#quick-start) •
+[Installation Options](#installation-options) •
+[Security & Task Runners](#security--task-runners) •
+[Troubleshooting](#troubleshooting) •
+[FAQ](#frequently-asked-questions)
 
-## 📋 Overview
+## Overview
 
 This installer is a guided Windows batch wizard for setting up [n8n](https://n8n.io) without having to assemble every command by hand. It supports native npm installs and Docker-based installs, then writes a local `README.txt` with the exact settings chosen during setup.
 
 It is designed for local development, personal automation, and small Windows-hosted n8n setups. For hardened production deployments, use this as a starting point and review n8n's official production guidance.
 
-## ✨ Features
+## Features
 
 - **Three installation methods**
   - Global npm install with the `n8n` command available system-wide
@@ -64,7 +64,7 @@ It is designed for local development, personal automation, and small Windows-hos
   - Documents data folder behavior and backup reminders
   - Includes troubleshooting notes for the installed instance
 
-## 📦 System Requirements
+## System Requirements
 
 ### Required for the installer
 
@@ -89,7 +89,7 @@ Avoid Node.js 24 and newer for native npm installs. Node.js and npm ship as one 
 
 If Docker is available, the installer can offer Docker even when the detected Node.js version is not supported for native installs.
 
-## 🚀 Quick Start
+## Quick Start
 
 1. Download `n8n-Installer.bat`.
 2. Install Node.js `22.x LTS` for the smoothest native install path.
@@ -98,7 +98,7 @@ If Docker is available, the installer can offer Docker even when the detected No
 5. Follow the prompts and confirm the final summary.
 6. Start n8n with the generated `start_n8n.bat`, Docker Desktop, or the Docker command shown in the generated `README.txt`.
 
-## 📖 Installation Options
+## Installation Options
 
 | Feature | Global npm | Folder-Specific npm | Docker Container |
 | :--- | :--- | :--- | :--- |
@@ -137,14 +137,14 @@ Creates a Docker volume, pulls the official n8n image, and starts one container.
 
 The installer runs a single n8n container. It does not enable external task runners or start a separate `n8nio/runners` container.
 
-## 🎯 How It Works
+## How It Works
 
 1. **System verification** checks Node.js, npm, Docker status, and default port `5678`.
 2. **Installation setup** collects the install type, target folder or Docker names, network settings, update preference, and shortcut preference.
 3. **Installation** runs npm or Docker commands and verifies that n8n was installed or the container started.
 4. **Completion** creates generated documentation and, for native installs, a configured `start_n8n.bat` launcher.
 
-## 🔧 Network Configuration
+## Network Configuration
 
 ### Native network settings
 
@@ -166,11 +166,11 @@ For Docker installs, the wizard asks for the Windows host port only. The contain
 - Check Windows Firewall rules when exposing n8n beyond localhost.
 - Add HTTPS, authentication, backups, and process supervision before treating an installation as production-ready.
 
-## 🔒 Security & Task Runners
+## Security & Task Runners
 
 When installing n8n natively or via a single Docker container, Code nodes (JavaScript & Python) run using **Internal Task Runners** as child processes of the main n8n process.
 
-> ℹ️ **Is single-container / native n8n a limited version?**
+> **Is single-container / native n8n a limited version?**
 >
 > **No.** A single-container or native install includes **100% of all n8n Community Edition features**, nodes, and capabilities.
 
@@ -179,7 +179,7 @@ When installing n8n natively or via a single Docker container, Code nodes (JavaS
 - **Single Container / Native (Default):** Code nodes execute in child processes sharing the host or container environment. This is secure and standard for local development, personal automation, and single-user or trusted-team setups.
 - **External Mode (Sidecar Container):** If you deploy n8n in a multi-tenant production environment where untrusted users can create workflows with arbitrary Code nodes, n8n recommends running task runners in **External Mode** via a separate `n8nio/runners` sidecar container. Refer to n8n's official [Hardening Task Runners Guide](https://docs.n8n.io/deploy/host-n8n/configure-n8n/security/harden-task-runners.md) for details.
 
-## 📁 What Gets Installed
+## What Gets Installed
 
 ### Native installed files
 
@@ -208,9 +208,9 @@ n8n stores workflows, credentials, settings, the local database, and the encrypt
 - Port mapping from your selected Windows port to container port `5678`
 - A generated `README.txt` in the installer folder with container and volume details
 
-## 🔐 Backup Your Encryption Key
+## Backup Your Encryption Key
 
-> ⚠️ **CRITICAL DATA NOTICE**
+> **CRITICAL DATA NOTICE**
 >
 > On first startup, n8n generates an encryption key to protect credentials and sensitive data. **Back up the full n8n data folder (`.n8n`) or Docker volume**, not only exported workflow JSON files.
 >
@@ -223,7 +223,7 @@ n8n stores workflows, credentials, settings, the local database, and the encrypt
 >
 > **Without the original encryption key, encrypted credentials cannot be recovered!**
 
-## 🎯 Usage
+## Usage
 
 ### Starting n8n
 
@@ -269,7 +269,7 @@ npm install n8n@latest
 
 For Docker installs, pull the latest image and recreate the container with the same volume. The Docker volume keeps your n8n data.
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### Unsupported Node.js version
 
@@ -321,7 +321,7 @@ If npm reports `EPERM`, `EBUSY`, or locked `node_modules` folders, close termina
 
 For more help, visit the [n8n Community Forum](https://community.n8n.io).
 
-## ❓ Frequently Asked Questions
+## Frequently Asked Questions
 
 ### Can I run multiple n8n instances?
 
@@ -366,19 +366,7 @@ Yes, but preserve the encryption key.
 
 This installer can help bootstrap a Windows installation, but production use needs additional hardening: HTTPS, authentication, backups, monitoring, process supervision, and the official n8n production guidance.
 
-## 🚀 Roadmap Ideas
-
-Future improvements that would fit this installer include:
-
-- Backup and restore helpers for native data folders
-- Docker volume backup and restore helpers
-- An uninstaller workflow
-- Process manager integration with PM2 or NSSM
-- More complete Docker update and recreate tooling
-
-Have a feature request? [Open an issue](https://github.com/web3Leander/n8n-windows-community-installer/issues)!
-
-## 📚 Additional Resources
+## Additional Resources
 
 - **Official Website:** [https://n8n.io](https://n8n.io)
 - **Documentation:** [https://docs.n8n.io](https://docs.n8n.io)
@@ -387,28 +375,28 @@ Have a feature request? [Open an issue](https://github.com/web3Leander/n8n-windo
 - **Workflow Templates:** [https://n8n.io/workflows](https://n8n.io/workflows)
 - **YouTube Channel:** [https://www.youtube.com/@n8n-io](https://www.youtube.com/@n8n-io)
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👤 Author
+## Author
 
 Created by [web3Leander](https://github.com/web3Leander)
 
-## ⭐ Credits
+## Credits
 
 - **n8n** is developed and maintained by [n8n GmbH](https://n8n.io)
 - This installer is a community contribution to make n8n more accessible on Windows
 
-## 🔗 Links
+## Links
 
 - [Report Issues](https://github.com/web3Leander/n8n-windows-community-installer/issues)
 - [Request Features](https://github.com/web3Leander/n8n-windows-community-installer/issues)
 
 ---
 
-Made with ❤️ for the n8n community
+Made for the n8n community

@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `--restart unless-stopped` flag to Docker container creation for automatic restart on reboot
 - Documented `WEBHOOK_URL` and added explicit encryption key backup reminders in generated `README.txt`
 - Added Security & Task Runner section to `README.md` and generated `README.txt` clarifying single-container/native features and external task runner isolation
-- Refined `README.md` layout with a quick navigation bar, installation options comparison table, and formatted callouts
+- Refined `README.md` layout with a quick navigation bar, installation options comparison table, clean text formatting, and removed outdated roadmap section
 
 ### Fixed
 
