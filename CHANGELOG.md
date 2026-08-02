@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added optional execution data pruning variables (`REM set EXECUTIONS_DATA_PRUNE=true`, `REM set EXECUTIONS_DATA_MAX_AGE=168`) commented out in generated start scripts so users can enable pruning if desired
 - Added `--restart unless-stopped` flag to Docker container creation for automatic restart on reboot
 - Documented `WEBHOOK_URL` and added explicit encryption key backup reminders in generated `README.txt`
+- Updated environment variables documentation in `README.md` to reflect all variables configured in `start_n8n.bat`
 - Added Security & Task Runner section to `README.md` and generated `README.txt` clarifying single-container/native features and external task runner isolation
 - Refined `README.md` layout with a quick navigation bar, installation options comparison table, clean text formatting, and removed outdated roadmap section
 
