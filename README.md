@@ -105,7 +105,7 @@ If Docker is available, the installer can offer Docker even when the detected No
 | **Best For** | System-wide CLI availability | Isolated instances & side-by-side testing | Containerized, clean runtime |
 | **Command** | `n8n start` | `start_n8n.bat` (or `npx n8n start`) | `docker start <container-name>` |
 | **Isolation** | Shared system Node environment | Local folder `node_modules` | Isolated Docker volume & image |
-| **Updates** | `npm update -g n8n` | `npm update n8n` | Pull new Docker image & recreate |
+| **Updates** | `npm update -g n8n` | `npm update n8n` | Pull latest image & restart container |
 
 ### Global Installation
 
@@ -271,7 +271,18 @@ For folder installs, run this in the installation folder:
 npm install n8n@latest
 ```
 
-For Docker installs, pull the latest image and recreate the container with the same volume. The Docker volume keeps your n8n data.
+For Docker installs, pull the latest image and restart the container with your existing volume:
+
+```bash
+docker pull docker.n8n.io/n8nio/n8n
+docker stop n8n
+docker rm n8n
+docker run -d --name n8n --restart unless-stopped -p 5678:5678 -v n8n_data:/home/node/.n8n docker.n8n.io/n8nio/n8n
+```
+
+> **How data is preserved:** `docker rm n8n` only removes the temporary container process. Your workflows, credentials, database, and encryption keys are stored inside the named Docker volume (`n8n_data`) and automatically re-attached when the new container starts.
+>
+> *(Replace `n8n` and `n8n_data` with your custom container and volume names if you customized them during setup.)*
 
 ## Troubleshooting
 
