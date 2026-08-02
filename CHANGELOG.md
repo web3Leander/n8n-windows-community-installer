@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated environment variables documentation in `README.md` to reflect all variables configured in `start_n8n.bat`
 - Added Security & Task Runner section to `README.md` and generated `README.txt` clarifying single-container/native features and external task runner isolation
 - Refined `README.md` layout with a quick navigation bar, installation options comparison table, clean text formatting, step-by-step Docker update instructions, and removed outdated roadmap section
+- Added n8n 3.0 notice in `README.md` detailing upcoming Docker-only requirement for 3.0 while maintaining 2.x support for native npm installs
 
 ### Fixed
 

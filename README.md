@@ -24,6 +24,7 @@ An unofficial, community-created installation wizard for [n8n](https://n8n.io) o
 [System Requirements](#system-requirements) •
 [Quick Start](#quick-start) •
 [Installation Options](#installation-options) •
+[n8n 3.0 Notice](#n8n-30-notice) •
 [Security & Task Runners](#security--task-runners) •
 [Troubleshooting](#troubleshooting) •
 [FAQ](#frequently-asked-questions)
@@ -165,6 +166,15 @@ For Docker installs, the wizard asks for the Windows host port only. The contain
 - Use `0.0.0.0` only when you intentionally need LAN access.
 - Check Windows Firewall rules when exposing n8n beyond localhost.
 - Add HTTPS, authentication, backups, and process supervision before treating an installation as production-ready.
+
+## n8n 3.0 Notice
+
+As detailed in the official [n8n v3.0 Breaking Changes documentation](https://docs.n8n.io/changelog/v30-breaking-changes), n8n v3.0 (scheduled for October 2026) introduces major deployment updates:
+
+- **Docker-based deployment required:** Self-hosted n8n v3.0 will require a Docker deployment. Native installations running directly via `npm` / `npx n8n` will no longer be supported by n8n GmbH in v3.0.
+- **Installer Support Strategy:**
+  - **Docker installations:** This installer will support **n8n v3.0** in addition to **n8n v2.x**.
+  - **Native installations (Global & Folder npm):** Will remain available and dedicated to **n8n v2.x** releases.
 
 ## Security & Task Runners
 
