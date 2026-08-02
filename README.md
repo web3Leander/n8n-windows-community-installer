@@ -1,22 +1,32 @@
-# n8n Windows Community Installer
+﻿# n8n Windows Community Installer
 
 An unofficial, community-created installation wizard for [n8n](https://n8n.io) on Windows systems.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-0.1.7-blue.svg)](https://github.com/web3Leander/n8n-windows-community-installer)
 
-## ⚠️ IMPORTANT DISCLAIMER
+> ⚠️ **IMPORTANT DISCLAIMER**
+>
+> **This is an UNOFFICIAL community-made installer and is NOT affiliated with, endorsed by, or connected to n8n.io or n8n GmbH in any way.**
+>
+> For official n8n support, please visit:
+> - [n8n Official Website](https://n8n.io)
+> - [n8n GitHub Repository](https://github.com/n8n-io/n8n)
+> - [n8n Community Forum](https://community.n8n.io)
+> - [n8n Documentation](https://docs.n8n.io)
+>
+> For issues with this installer, please open an issue in this repository.
 
-**This is an UNOFFICIAL community-made installer and is NOT affiliated with, endorsed by, or connected to n8n.io or n8n GmbH in any way.**
+## 📍 Quick Navigation
 
-For official n8n support, please visit:
-
-- [n8n Official Website](https://n8n.io)
-- [n8n GitHub Repository](https://github.com/n8n-io/n8n)
-- [n8n Community Forum](https://community.n8n.io)
-- [n8n Documentation](https://docs.n8n.io)
-
-For issues with this installer, please open an issue in this repository.
+[Overview](#-overview) •
+[Features](#-features) •
+[System Requirements](#-system-requirements) •
+[Quick Start](#-quick-start) •
+[Installation Options](#-installation-options) •
+[Security & Task Runners](#-security--task-runners) •
+[Troubleshooting](#-troubleshooting) •
+[FAQ](#-frequently-asked-questions)
 
 ## 📋 Overview
 
@@ -67,7 +77,6 @@ It is designed for local development, personal automation, and small Windows-hos
 
 - **Node.js:** `20.19+` or `22.x LTS` from [nodejs.org](https://nodejs.org/), with `22.x LTS` recommended
 - **npm:** `10.x`, as bundled with Node.js 22 LTS
-- **npm:** Included with supported Node.js versions
 - **Disk space:** At least 2 GB free on the target drive
 - **Administrator rights:** Optional, but recommended for global installs and all-users shortcuts
 
@@ -90,6 +99,13 @@ If Docker is available, the installer can offer Docker even when the detected No
 6. Start n8n with the generated `start_n8n.bat`, Docker Desktop, or the Docker command shown in the generated `README.txt`.
 
 ## 📖 Installation Options
+
+| Feature | Global npm | Folder-Specific npm | Docker Container |
+| :--- | :--- | :--- | :--- |
+| **Best For** | System-wide CLI availability | Isolated instances & side-by-side testing | Containerized, clean runtime |
+| **Command** | `n8n start` | `start_n8n.bat` (or `npx n8n start`) | `docker start <container-name>` |
+| **Isolation** | Shared system Node environment | Local folder `node_modules` | Isolated Docker volume & image |
+| **Updates** | `npm update -g n8n` | `npm update n8n` | Pull new Docker image & recreate |
 
 ### Global Installation
 
@@ -150,6 +166,19 @@ For Docker installs, the wizard asks for the Windows host port only. The contain
 - Check Windows Firewall rules when exposing n8n beyond localhost.
 - Add HTTPS, authentication, backups, and process supervision before treating an installation as production-ready.
 
+## 🔒 Security & Task Runners
+
+When installing n8n natively or via a single Docker container, Code nodes (JavaScript & Python) run using **Internal Task Runners** as child processes of the main n8n process.
+
+> ℹ️ **Is single-container / native n8n a limited version?**
+>
+> **No.** A single-container or native install includes **100% of all n8n Community Edition features**, nodes, and capabilities.
+
+### Task Runner Modes & Isolation
+
+- **Single Container / Native (Default):** Code nodes execute in child processes sharing the host or container environment. This is secure and standard for local development, personal automation, and single-user or trusted-team setups.
+- **External Mode (Sidecar Container):** If you deploy n8n in a multi-tenant production environment where untrusted users can create workflows with arbitrary Code nodes, n8n recommends running task runners in **External Mode** via a separate `n8nio/runners` sidecar container. Refer to n8n's official [Hardening Task Runners Guide](https://docs.n8n.io/deploy/host-n8n/configure-n8n/security/harden-task-runners.md) for details.
+
 ## 📁 What Gets Installed
 
 ### Native installed files
@@ -181,16 +210,18 @@ n8n stores workflows, credentials, settings, the local database, and the encrypt
 
 ## 🔐 Backup Your Encryption Key
 
-On first startup, n8n creates an encryption key used to protect credentials and other sensitive data. Back up the full n8n data folder or Docker volume, not only exported workflows.
-
-Back up before:
-
-- Upgrading n8n
-- Moving an installation
-- Reinstalling Windows or changing computers
-- Deleting a folder, global package, container, or Docker volume
-
-Without the original encryption key, encrypted credentials cannot be recovered.
+> ⚠️ **CRITICAL DATA NOTICE**
+>
+> On first startup, n8n generates an encryption key to protect credentials and sensitive data. **Back up the full n8n data folder (`.n8n`) or Docker volume**, not only exported workflow JSON files.
+>
+> Back up before:
+>
+> - Upgrading n8n
+> - Moving an installation
+> - Reinstalling Windows or changing computers
+> - Deleting a folder, global package, container, or Docker volume
+>
+> **Without the original encryption key, encrypted credentials cannot be recovered!**
 
 ## 🎯 Usage
 
