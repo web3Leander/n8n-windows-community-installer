@@ -193,10 +193,14 @@ The generated start script sets:
 
 ```batch
 N8N_USER_FOLDER=<your configured data base path>
-N8N_HOST=<your selected host>
 N8N_PORT=<your selected port>
 N8N_PROTOCOL=http
+N8N_HOST=<your selected host>
 N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+N8N_UNVERIFIED_PACKAGES_ENABLED=true
+REM set EXECUTIONS_DATA_PRUNE=true
+REM set EXECUTIONS_DATA_MAX_AGE=168
+REM set WEBHOOK_URL=https://n8n.example.com/
 ```
 
 n8n stores workflows, credentials, settings, the local database, and the encryption key in its user folder. The generated `README.txt` shows the exact path for the installation you created.
