@@ -180,8 +180,8 @@ Installs n8n inside your chosen WSL Linux distribution (Ubuntu, Debian, Alpine, 
 - Applies the same Node.js rule as native installs (`20.19+` or `22.x LTS`), and if the distro's Node.js does not match it explains the situation and lets you choose
 - Installs as `root` only when npm's prefix is a system path; if Node.js is managed inside your home folder (for example nvm) it installs as your own user so your Node.js tree is never left root-owned
 - Keeps all n8n data on native Linux storage in the distro's home folder (`<home>/.n8n`, usually `/home/<user>/.n8n`), via `N8N_USER_FOLDER=<home>`
-- Creates `start_n8n_wsl.bat` under `%USERPROFILE%\n8n`
-- Listens inside the WSL virtual machine and is reachable from Windows at `http://localhost:<port>`. It is **not** exposed to your local network; the generated `README-WSL.txt` documents the `netsh interface portproxy` recipe if you deliberately want that.
+- Creates `start_n8n_wsl.bat` under `%USERPROFILE%\n8n-wsl`
+- Listens inside the WSL virtual machine and is reachable from Windows at `http://localhost:<port>`. It is **not** exposed to your local network; the generated `README.txt` documents the `netsh interface portproxy` recipe if you deliberately want that.
 
 ## How It Works
 
@@ -211,7 +211,7 @@ For WSL2 installs, the wizard asks for the port only. n8n binds `0.0.0.0` inside
 
 The IPv4 bind is deliberate. n8n defaults to the IPv6 wildcard, which WSL then publishes as `[::1]` only, and that makes `http://127.0.0.1:<port>` fail while `http://[::1]:<port>` works. The generated launcher sets `N8N_LISTEN_ADDRESS=0.0.0.0` to avoid this.
 
-Exposing a WSL2 instance to your LAN needs a `netsh interface portproxy` rule as well as a firewall rule, because WSL2 sits behind NAT. The generated `README-WSL.txt` documents the exact commands if you decide you want that.
+Exposing a WSL2 instance to your LAN needs a `netsh interface portproxy` rule as well as a firewall rule, because WSL2 sits behind NAT. The generated `README.txt` documents the exact commands if you decide you want that.
 
 ### Security Notes
 
@@ -278,9 +278,9 @@ n8n stores workflows, credentials, settings, the local database, and the encrypt
 ### WSL2 installed files
 
 - n8n installed inside your chosen WSL Linux distribution
-- A configured `start_n8n_wsl.bat` launcher stored under `%USERPROFILE%\n8n`
+- A configured `start_n8n_wsl.bat` launcher stored under `%USERPROFILE%\n8n-wsl`, a folder of its own so it can never collide with a global install
 - A Linux native data folder located at `/home/<user>/.n8n` inside your WSL distro
-- A generated `README-WSL.txt` under `%USERPROFILE%\n8n` with WSL distribution and user details, kept separate so it never overwrites a global install's `README.txt`
+- A generated `README.txt` under `%USERPROFILE%\n8n-wsl` with WSL distribution and user details
 - Optional desktop shortcut pointing to `start_n8n_wsl.bat`
 
 ## Backup Your Encryption Key
@@ -324,7 +324,7 @@ For WSL2 installs, run:
 start_n8n_wsl.bat
 ```
 
-It is created in `%USERPROFILE%\n8n`, along with a desktop shortcut if you asked for one. Keep the window open while n8n runs.
+It is created in `%USERPROFILE%\n8n-wsl`, along with a desktop shortcut if you asked for one. Keep the window open while n8n runs.
 
 You are not tied to that script. The same thing from Windows in one line:
 
@@ -342,7 +342,7 @@ export N8N_LISTEN_ADDRESS=0.0.0.0
 n8n start
 ```
 
-> **Keep the `PATH` line.** Your interactive shell may select a different Node.js than the installer used - especially with nvm - and n8n will then either not be found or run from the wrong version. The exact `<node-bin>` for your machine is written into the generated `README-WSL.txt` in `%USERPROFILE%\n8n`.
+> **Keep the `PATH` line.** Your interactive shell may select a different Node.js than the installer used - especially with nvm - and n8n will then either not be found or run from the wrong version. The exact `<node-bin>` for your machine is written into the generated `README.txt` in `%USERPROFILE%\n8n-wsl`.
 >
 > `N8N_LISTEN_ADDRESS=0.0.0.0` is what makes `http://localhost:<port>` reachable from Windows. Without it n8n binds the IPv6 wildcard and only `http://[::1]:<port>` works.
 
@@ -411,7 +411,7 @@ If the installer reported that Node.js is managed by your user (for example thro
 wsl -d <distro> --exec sh -c "export PATH=<node-bin>:/usr/local/bin:/usr/bin:/bin:$PATH; npm install -g n8n@latest --allow-scripts=sqlite3"
 ```
 
-> **The `PATH` matters here too.** Without it, `npm` can resolve to a different Node.js version and install n8n into a prefix the launcher never reads, so nothing appears to change. The generated `README-WSL.txt` in `%USERPROFILE%\n8n` contains the exact command for your setup.
+> **The `PATH` matters here too.** Without it, `npm` can resolve to a different Node.js version and install n8n into a prefix the launcher never reads, so nothing appears to change. The generated `README.txt` in `%USERPROFILE%\n8n-wsl` contains the exact command for your setup.
 
 ## Troubleshooting
 
@@ -573,83 +573,18 @@ This installer can help bootstrap a Windows installation, but production use nee
 
 ## Uninstalling a WSL2 Installation
 
-WSL puts n8n inside a Linux environment, which makes "where did it go and how do I remove it" a fair question. Every command below is run from an ordinary **Windows PowerShell or Command Prompt** window - you never have to learn Linux. Copy a line, paste it, press Enter.
+The installer creates `uninstall_n8n_wsl.bat` in `%USERPROFILE%\n8n-wsl`, next to the launcher. Double-click it and choose an option.
 
-Replace `<distro>` with your distribution name (for example `Ubuntu`), `<home>` with the Linux home folder shown during setup, and `<port>` with your port. The generated `README-WSL.txt` in `%USERPROFILE%\n8n` already has all of these filled in for your machine, including the exact `<node-bin>` path.
+| Option | What happens |
+| :--- | :--- |
+| **Remove n8n, keep my workflows** | The n8n program is removed from your distribution. Your workflows, credentials and encryption key stay where they are, so reinstalling later picks up exactly where you left off. |
+| **Remove n8n and delete my workflows** | The above, plus your data folder. You are offered a backup to your Desktop first, and then have to type `DELETE` to confirm. |
 
-> `<home>` is usually `/home/<user>`, but some distributions log you in as `root`, in which case it is `/root`. Use whichever the installer reported.
+It also cleans up the generated `start_n8n_wsl.bat`, `README.txt` and the desktop shortcut.
 
-### Step 1 - Back up your work first
+> It removes only what the installer created. **Node.js, your Linux distribution, Docker and everything else are left untouched.**
 
-Your workflows, credentials and encryption key live inside Linux, not on your Windows drive. The simplest way to rescue them is File Explorer:
-
-1. Open File Explorer
-2. Paste this into the address bar and press Enter: `\\wsl$\<distro>` then open the `<home>` folder
-3. Copy the `.n8n` folder somewhere safe on your Windows drive
-
-If you skip this, your workflows cannot be recovered later.
-
-### Step 2 - Stop n8n
-
-Press `Ctrl+C` in the window running n8n and close it. If that window is already gone:
-
-```batch
-wsl -d <distro> --exec pkill -f "n8n start"
-```
-
-### Step 3 - Remove the n8n program
-
-```batch
-wsl -d <distro> -u root --exec sh -c "export PATH=<node-bin>:/usr/local/bin:/usr/bin:/bin:$PATH; npm uninstall -g n8n"
-```
-
-If setup reported that Node.js is managed by your user (for example nvm), drop `-u root`:
-
-```batch
-wsl -d <distro> --exec sh -c "export PATH=<node-bin>:/usr/local/bin:/usr/bin:/bin:$PATH; npm uninstall -g n8n"
-```
-
-This removes the program only. Your data is untouched.
-
-### Step 4 - Delete your n8n data (optional, permanent)
-
-Skip this if you might reinstall and want to keep your workflows. There is no undo, and the encryption key goes with it:
-
-```batch
-wsl -d <distro> --exec rm -rf <home>/.n8n
-```
-
-### Step 5 - Remove the Windows files
-
-Delete these by hand:
-
-- `%USERPROFILE%\n8n\start_n8n_wsl.bat`
-- `%USERPROFILE%\n8n\README-WSL.txt`
-- Any **Start n8n (WSL)** shortcut on your Desktop
-
-### Step 6 - Confirm it is gone
-
-```batch
-wsl -d <distro> --exec sh -c "export PATH=<node-bin>:/usr/local/bin:/usr/bin:/bin:$PATH; command -v n8n || echo n8n is fully removed"
-```
-
-### Optional - remove Node.js as well
-
-Only if nothing else in that distribution uses Node.js. If you are unsure, leave it - keeping it is harmless.
-
-```batch
-wsl -d <distro> -u root --exec apt-get remove --purge -y nodejs
-```
-
-Adjust the package manager for your distribution (`dnf`, `apk`, `pacman`, `zypper`). If Node.js was installed through nvm under your own account, open a shell with `wsl -d <distro>` and run `nvm uninstall 22` instead.
-
-### Last resort - delete the whole distribution
-
-> **This permanently erases everything inside that Linux distribution, not just n8n.** There is no undo and no recycle bin. Only do this if you created the distribution purely for n8n.
-
-```batch
-wsl --unregister <distro>
-```
+Prefer to do it by hand? The exact commands for your installation, already filled in with your distribution, paths and user, are in `README.txt` under **HOW TO UNINSTALL**.
 
 ## Roadmap
 

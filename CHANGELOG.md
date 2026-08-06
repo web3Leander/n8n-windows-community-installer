@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2] - 2026-08-06
 
+### Changed
+
+- **Task Broker port is now derived from the UI port** (`N8N_RUNNERS_BROKER_PORT` = UI port + 1) for global, folder and WSL installs. n8n 2.x runs a second service on port `5679` by default, so two instances could not run at the same time. A WSL install was the worst case: WSL forwards every listener to Windows loopback, so it occupied Windows `5679` and stopped any native install from starting at all. Docker is unaffected, as its broker stays inside the container.
+- Generated native start scripts now end with `pause`, so if n8n exits the error stays on screen instead of the window closing instantly.
+
 ### Added
 
 - **WSL2 (Windows Subsystem for Linux) Guided Installation (Option 4)**:
@@ -20,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - npm is reported but never modified, matching the existing npm handling on Windows
   - Native Linux filesystem data storage via `N8N_USER_FOLDER=/home/<user>`, so n8n creates `/home/<user>/.n8n`
   - Generated `start_n8n_wsl.bat` launcher under `%USERPROFILE%\n8n`, with an optional update check
+  - Generated `uninstall_n8n_wsl.bat`, tailored to the installation, offering "remove n8n but keep my workflows" or a full removal with an optional Desktop backup and a `DELETE` confirmation. It removes only what the installer created and never touches Node.js, the Linux distribution, or anything else
   - Sets `N8N_LISTEN_ADDRESS=0.0.0.0` inside the WSL virtual machine so the port is published on IPv4 loopback. n8n otherwise binds the IPv6 wildcard, which WSL publishes as `[::1]` only and makes `http://127.0.0.1` fail. The instance stays unreachable from the LAN, since the WSL VM is behind NAT and WSL forwards to Windows loopback only
   - Detection of existing n8n installations inside the selected distribution, with the same `DELETE` overwrite confirmation used by options 1 and 2
 

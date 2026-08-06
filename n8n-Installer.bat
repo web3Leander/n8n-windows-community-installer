@@ -1073,6 +1073,9 @@ if !ERRORLEVEL! NEQ 0 (
 goto CREATE_START_SCRIPT
 
 :CREATE_START_SCRIPT
+REM n8n 2.x runs a Task Broker on a second port, default 5679. Two instances
+REM would fight over it, so it is derived from the UI port instead.
+set /a N8N_BROKER_PORT=!N8N_PORT!+1
 REM Create start script and README
 echo.
 echo  Creating start script and documentation...
@@ -1098,6 +1101,7 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
             echo setlocal enabledelayedexpansion
             echo set N8N_USER_FOLDER=!N8N_DATA_PATH!
             echo set N8N_PORT=!N8N_PORT!
+            echo set N8N_RUNNERS_BROKER_PORT=!N8N_BROKER_PORT!
             echo set N8N_PROTOCOL=http
             echo set N8N_HOST=!N8N_HOST!
             echo set N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
@@ -1134,6 +1138,9 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
             echo echo Access n8n at: http://!N8N_HOST!:!N8N_PORT!
             echo echo.
             echo npx n8n start
+            echo.
+            echo REM Keeps the window open if n8n exits, so the error stays readable
+            echo pause
         ) > "!START_SCRIPT!"
     ) else (
         REM Global installation - direct command
@@ -1142,6 +1149,7 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
             echo setlocal enabledelayedexpansion
             echo set N8N_USER_FOLDER=!N8N_DATA_PATH!
             echo set N8N_PORT=!N8N_PORT!
+            echo set N8N_RUNNERS_BROKER_PORT=!N8N_BROKER_PORT!
             echo set N8N_PROTOCOL=http
             echo set N8N_HOST=!N8N_HOST!
             echo set N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
@@ -1176,6 +1184,9 @@ if "!N8N_INSTALL_TYPE!"=="DOCKER" (
             echo echo Access n8n at: http://!N8N_HOST!:!N8N_PORT!
             echo echo.
             echo n8n start
+            echo.
+            echo REM Keeps the window open if n8n exits, so the error stays readable
+            echo pause
         ) > "!START_SCRIPT!"
     )
 
@@ -1958,9 +1969,14 @@ echo  [✓] n8n !WSL_N8N_FINAL! installed inside !WSL_DISTRO!
 :WSL_CREATE_LAUNCHER
 echo.
 echo  Creating start script and documentation...
-if not exist "%USERPROFILE%\n8n" mkdir "%USERPROFILE%\n8n"
-set "WSL_HOME_DIR=%USERPROFILE%\n8n"
-set "START_SCRIPT=%USERPROFILE%\n8n\start_n8n_wsl.bat"
+REM Dedicated folder. A global install owns %USERPROFILE%\n8n, so sharing it
+REM would let the two installs overwrite each other's files.
+set "WSL_HOME_DIR=%USERPROFILE%\n8n-wsl"
+if not exist "!WSL_HOME_DIR!" mkdir "!WSL_HOME_DIR!"
+set "START_SCRIPT=!WSL_HOME_DIR!\start_n8n_wsl.bat"
+REM WSL forwards every listener to Windows loopback, so n8n's Task Broker on
+REM its default 5679 would block a native Windows install. Derive it instead.
+set /a N8N_BROKER_PORT=!N8N_PORT!+1
 set "WSL_RUNPATH=/usr/local/bin:/usr/bin:/bin:$PATH"
 if not "!WSL_NODEBIN!"=="/usr/local/bin" set "WSL_RUNPATH=!WSL_NODEBIN!:/usr/local/bin:/usr/bin:/bin:$PATH"
 
@@ -2019,7 +2035,7 @@ REM N8N_HOST only sets the advertised URL. N8N_LISTEN_ADDRESS is the bind
 REM interface, and it must be the IPv4 wildcard: n8n otherwise binds the IPv6
 REM wildcard, and the WSL relay then publishes the port on [::1] only, so
 REM http://127.0.0.1 on Windows is refused.
-echo wsl -d !WSL_DISTRO! --exec sh -c "export PATH=!WSL_RUNPATH!; export N8N_USER_FOLDER=!WSLP_WSLHOME!; export N8N_PORT=!N8N_PORT!; export N8N_PROTOCOL=http; export N8N_HOST=localhost; export N8N_LISTEN_ADDRESS=0.0.0.0; export N8N_UNVERIFIED_PACKAGES_ENABLED=true; exec n8n start">> "!START_SCRIPT!"
+echo wsl -d !WSL_DISTRO! --exec sh -c "export PATH=!WSL_RUNPATH!; export N8N_USER_FOLDER=!WSLP_WSLHOME!; export N8N_PORT=!N8N_PORT!; export N8N_RUNNERS_BROKER_PORT=!N8N_BROKER_PORT!; export N8N_PROTOCOL=http; export N8N_HOST=localhost; export N8N_LISTEN_ADDRESS=0.0.0.0; export N8N_UNVERIFIED_PACKAGES_ENABLED=true; exec n8n start">> "!START_SCRIPT!"
 echo.>> "!START_SCRIPT!"
 echo pause>> "!START_SCRIPT!"
 
@@ -2042,7 +2058,7 @@ echo.
 echo  Creating README file...
 REM A global install writes its own README.txt into this same folder, so the
 REM WSL one uses a distinct name instead of overwriting it.
-set "README_FILE=!WSL_HOME_DIR!\README-WSL.txt"
+set "README_FILE=!WSL_HOME_DIR!\README.txt"
 set "WSL_WINHOME=!WSLP_WSLHOME:/=\!"
 
 echo ════════════════════════════════════════════════════════════════ > "!README_FILE!"
@@ -2077,6 +2093,7 @@ echo  Data Directory:    !WSLP_WSLHOME!/.n8n >> "!README_FILE!"
 echo  Start Script:      !START_SCRIPT! >> "!README_FILE!"
 echo  Listen Address:    0.0.0.0 ^(inside the WSL VM only^) >> "!README_FILE!"
 echo  Network Port:      !N8N_PORT! >> "!README_FILE!"
+echo  Task Broker Port:  !N8N_BROKER_PORT! ^(n8n needs a second port^) >> "!README_FILE!"
 echo  Installation Date: %DATE% %TIME% >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
@@ -2175,86 +2192,30 @@ echo    netsh interface portproxy add v4tov4 listenport=!N8N_PORT! listenaddress
 echo    netsh advfirewall firewall add rule name="n8n WSL" dir=in action=allow protocol=TCP localport=!N8N_PORT! >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo  The WSL IP changes on reboot unless mirrored networking is enabled. >> "!README_FILE!"
-echo. >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo  HOW TO UNINSTALL >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo. >> "!README_FILE!"
-echo  Follow these in order. Every command is run from a normal Windows >> "!README_FILE!"
-echo  PowerShell or Command Prompt window - you do not need to know Linux. >> "!README_FILE!"
-echo  Copy a line, paste it, press Enter. >> "!README_FILE!"
+echo  Run uninstall_n8n_wsl.bat, in this same folder. >> "!README_FILE!"
+echo  It offers to back up your workflows first, and lets you choose >> "!README_FILE!"
+echo  whether to keep or delete your data. >> "!README_FILE!"
 echo. >> "!README_FILE!"
-echo  STEP 1 - Back up your work first ^(strongly recommended^) >> "!README_FILE!"
-echo  ──────────────────────────────────────────────────────── >> "!README_FILE!"
-echo  Your workflows, credentials and encryption key live inside Linux. >> "!README_FILE!"
-echo  The easiest way to save them is with Windows File Explorer: >> "!README_FILE!"
+echo  It only removes what this installer created. It never touches your >> "!README_FILE!"
+echo  Linux distribution, Node.js, or anything else you have installed. >> "!README_FILE!"
 echo. >> "!README_FILE!"
-echo    1. Open File Explorer >> "!README_FILE!"
-echo    2. Paste this into the address bar and press Enter: >> "!README_FILE!"
-echo         \\wsl$\!WSL_DISTRO!!WSL_WINHOME! >> "!README_FILE!"
-echo    3. Copy the .n8n folder somewhere safe on your Windows drive >> "!README_FILE!"
+echo  If you would rather do it by hand, these are the only steps needed: >> "!README_FILE!"
 echo. >> "!README_FILE!"
-echo  If you skip this you cannot get your workflows back later. >> "!README_FILE!"
-echo. >> "!README_FILE!"
-echo  STEP 2 - Stop n8n >> "!README_FILE!"
-echo  ───────────────── >> "!README_FILE!"
-echo  Press Ctrl+C in the window running n8n, then close it. >> "!README_FILE!"
-echo  If you already closed that window, run: >> "!README_FILE!"
-echo. >> "!README_FILE!"
-echo    wsl -d !WSL_DISTRO! --exec pkill -f "n8n start" >> "!README_FILE!"
-echo. >> "!README_FILE!"
-echo  STEP 3 - Remove the n8n program >> "!README_FILE!"
-echo  ─────────────────────────────── >> "!README_FILE!"
+echo    1. Press Ctrl+C in the window running n8n >> "!README_FILE!"
+echo    2. Remove the n8n program: >> "!README_FILE!"
 if "!WSL_USE_ROOT!"=="YES" (
-    echo    wsl -d !WSL_DISTRO! -u root --exec sh -c "export PATH=!WSL_RUNPATH!; npm uninstall -g n8n" >> "!README_FILE!"
+    echo         wsl -d !WSL_DISTRO! -u root --exec sh -c "export PATH=!WSL_RUNPATH!; npm uninstall -g n8n" >> "!README_FILE!"
 ) else (
-    echo    wsl -d !WSL_DISTRO! --exec sh -c "export PATH=!WSL_RUNPATH!; npm uninstall -g n8n" >> "!README_FILE!"
+    echo         wsl -d !WSL_DISTRO! --exec sh -c "export PATH=!WSL_RUNPATH!; npm uninstall -g n8n" >> "!README_FILE!"
 )
+echo    3. Delete the files in !WSL_HOME_DIR! if you want them gone >> "!README_FILE!"
 echo. >> "!README_FILE!"
-echo  This removes the n8n program only. Your data is still there. >> "!README_FILE!"
-echo. >> "!README_FILE!"
-echo  STEP 4 - Delete your n8n data ^(OPTIONAL - THIS IS PERMANENT^) >> "!README_FILE!"
-echo  ──────────────────────────────────────────────────────────── >> "!README_FILE!"
-echo  Skip this step if you might reinstall later and want to keep your >> "!README_FILE!"
-echo  workflows. There is no undo, and the encryption key goes with it: >> "!README_FILE!"
-echo. >> "!README_FILE!"
-echo    wsl -d !WSL_DISTRO! --exec rm -rf !WSLP_WSLHOME!/.n8n >> "!README_FILE!"
-echo. >> "!README_FILE!"
-echo  STEP 5 - Remove the Windows files >> "!README_FILE!"
-echo  ───────────────────────────────── >> "!README_FILE!"
-echo  Delete these by hand in File Explorer: >> "!README_FILE!"
-echo. >> "!README_FILE!"
-echo    !START_SCRIPT! >> "!README_FILE!"
-echo    !README_FILE! >> "!README_FILE!"
-echo    Any "Start n8n (WSL)" shortcut on your Desktop >> "!README_FILE!"
-echo. >> "!README_FILE!"
-echo  STEP 6 - Check it worked >> "!README_FILE!"
-echo  ──────────────────────── >> "!README_FILE!"
-echo    wsl -d !WSL_DISTRO! --exec sh -c "export PATH=!WSL_RUNPATH!; command -v n8n ^|^| echo n8n is fully removed" >> "!README_FILE!"
-echo. >> "!README_FILE!"
-echo  OPTIONAL - Also remove Node.js >> "!README_FILE!"
-echo  ────────────────────────────── >> "!README_FILE!"
-echo  Only do this if nothing else in !WSL_DISTRO! uses Node.js. If you are >> "!README_FILE!"
-echo  not sure, leave it alone - it is harmless to keep. >> "!README_FILE!"
-echo. >> "!README_FILE!"
-if "!WSL_USE_ROOT!"=="YES" (
-    echo    wsl -d !WSL_DISTRO! -u root --exec apt-get remove --purge -y nodejs >> "!README_FILE!"
-    echo    ^(only if Node.js came from apt; adjust for dnf, apk, pacman, zypper^) >> "!README_FILE!"
-) else (
-    echo    Node.js here is managed by nvm under your own account. To remove >> "!README_FILE!"
-    echo    just the version this installer added, open a shell with >> "!README_FILE!"
-    echo    "wsl -d !WSL_DISTRO!" and run:  nvm uninstall 22 >> "!README_FILE!"
-)
-echo. >> "!README_FILE!"
-echo  LAST RESORT - Delete the whole Linux distribution >> "!README_FILE!"
-echo  ───────────────────────────────────────────────── >> "!README_FILE!"
-echo  Only if you created !WSL_DISTRO! purely for n8n. This permanently >> "!README_FILE!"
-echo  erases EVERYTHING inside that distribution, not just n8n: >> "!README_FILE!"
-echo. >> "!README_FILE!"
-echo    wsl --unregister !WSL_DISTRO! >> "!README_FILE!"
-echo. >> "!README_FILE!"
-echo  There is no undo and no recycle bin for this. Do not run it on a >> "!README_FILE!"
-echo  distribution you use for anything else. >> "!README_FILE!"
+echo  Your workflows stay at !WSLP_WSLHOME!/.n8n until you delete that >> "!README_FILE!"
+echo  folder yourself, so an uninstall is safe to reverse by reinstalling. >> "!README_FILE!"
 echo. >> "!README_FILE!"
 echo ════════════════════════════════════════════════════════════════ >> "!README_FILE!"
 echo  TROUBLESHOOTING >> "!README_FILE!"
@@ -2314,6 +2275,117 @@ echo ═════════════════════════
 
 echo  [✓] README created: !README_FILE!
 
+:WSL_CREATE_UNINSTALLER
+echo.
+echo  Creating uninstaller...
+set "UNINSTALL_SCRIPT=!WSL_HOME_DIR!\uninstall_n8n_wsl.bat"
+set "WSL_BACKUP_DIR=%USERPROFILE%\Desktop\n8n-backup-!WSL_DISTRO!"
+
+REM Emitted at nesting level 0. The generated file uses goto labels and plain
+REM %VAR% so it needs no delayed expansion, and therefore contains no literal !
+echo @echo off> "!UNINSTALL_SCRIPT!"
+echo setlocal>> "!UNINSTALL_SCRIPT!"
+echo chcp 65001 ^>nul 2^>^&1 >> "!UNINSTALL_SCRIPT!"
+echo TITLE Uninstall n8n ^(WSL2 - !WSL_DISTRO!^)>> "!UNINSTALL_SCRIPT!"
+echo.>> "!UNINSTALL_SCRIPT!"
+echo :MENU>> "!UNINSTALL_SCRIPT!"
+echo cls>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo echo  ════════════════════════════════════════>> "!UNINSTALL_SCRIPT!"
+echo echo   Uninstall n8n from WSL2 ^(!WSL_DISTRO!^)>> "!UNINSTALL_SCRIPT!"
+echo echo  ════════════════════════════════════════>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo echo  This removes only the n8n that the installer added to !WSL_DISTRO!.>> "!UNINSTALL_SCRIPT!"
+echo echo  Node.js, the !WSL_DISTRO! distribution and everything else on your>> "!UNINSTALL_SCRIPT!"
+echo echo  computer are left completely alone.>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo echo   1. Remove n8n, keep my workflows       [recommended]>> "!UNINSTALL_SCRIPT!"
+echo echo   2. Remove n8n and delete my workflows>> "!UNINSTALL_SCRIPT!"
+echo echo   3. Cancel>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo set "U=">> "!UNINSTALL_SCRIPT!"
+echo set /p "U=  Your choice (1, 2 or 3): ">> "!UNINSTALL_SCRIPT!"
+echo if "%%U%%"=="1" goto KEEP>> "!UNINSTALL_SCRIPT!"
+echo if "%%U%%"=="2" goto WIPE>> "!UNINSTALL_SCRIPT!"
+echo goto CANCEL>> "!UNINSTALL_SCRIPT!"
+echo.>> "!UNINSTALL_SCRIPT!"
+echo :KEEP>> "!UNINSTALL_SCRIPT!"
+echo set "REMOVE_DATA=NO">> "!UNINSTALL_SCRIPT!"
+echo goto RUN>> "!UNINSTALL_SCRIPT!"
+echo.>> "!UNINSTALL_SCRIPT!"
+echo :WIPE>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo echo  This deletes your workflows, credentials and the encryption>> "!UNINSTALL_SCRIPT!"
+echo echo  key that unlocks them. It cannot be undone.>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo echo  Note: !WSLP_WSLHOME!/.n8n is the standard n8n folder for the>> "!UNINSTALL_SCRIPT!"
+echo echo  Linux user !WSLP_WSLUSER!. If you run any other n8n as that user>> "!UNINSTALL_SCRIPT!"
+echo echo  inside !WSL_DISTRO!, it shares this folder. Choose option 1 instead>> "!UNINSTALL_SCRIPT!"
+echo echo  if you are unsure.>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo set "B=">> "!UNINSTALL_SCRIPT!"
+echo set /p "B=  Back up to your Desktop first? (Y/N): ">> "!UNINSTALL_SCRIPT!"
+echo if /i not "%%B%%"=="Y" goto WIPE_CONFIRM>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo echo  Backing up...>> "!UNINSTALL_SCRIPT!"
+echo powershell -NoProfile -Command "Copy-Item -LiteralPath '\\wsl$\!WSL_DISTRO!!WSL_WINHOME!\.n8n' -Destination '!WSL_BACKUP_DIR!' -Recurse -Force" 2^>nul>> "!UNINSTALL_SCRIPT!"
+echo if not exist "!WSL_BACKUP_DIR!" goto BACKUP_FAILED>> "!UNINSTALL_SCRIPT!"
+echo echo  [OK] Backup saved to !WSL_BACKUP_DIR!>> "!UNINSTALL_SCRIPT!"
+echo goto WIPE_CONFIRM>> "!UNINSTALL_SCRIPT!"
+echo.>> "!UNINSTALL_SCRIPT!"
+echo :BACKUP_FAILED>> "!UNINSTALL_SCRIPT!"
+echo echo  [X] Backup failed, so nothing has been deleted.>> "!UNINSTALL_SCRIPT!"
+echo goto CANCEL>> "!UNINSTALL_SCRIPT!"
+echo.>> "!UNINSTALL_SCRIPT!"
+echo :WIPE_CONFIRM>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo set "C=">> "!UNINSTALL_SCRIPT!"
+echo set /p "C=  Type DELETE in capital letters to confirm: ">> "!UNINSTALL_SCRIPT!"
+echo if not "%%C%%"=="DELETE" goto CANCEL>> "!UNINSTALL_SCRIPT!"
+echo set "REMOVE_DATA=YES">> "!UNINSTALL_SCRIPT!"
+echo goto RUN>> "!UNINSTALL_SCRIPT!"
+echo.>> "!UNINSTALL_SCRIPT!"
+echo :RUN>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo echo  Stopping n8n...>> "!UNINSTALL_SCRIPT!"
+REM Matched on the full binary path, not just "n8n start", so another n8n
+REM running in the same distro is never killed.
+echo wsl -d !WSL_DISTRO! --exec pkill -f "!WSL_NODEBIN!/n8n start" ^>nul 2^>^&1 >> "!UNINSTALL_SCRIPT!"
+echo echo  Removing the n8n program from !WSL_DISTRO!...>> "!UNINSTALL_SCRIPT!"
+if "!WSL_USE_ROOT!"=="YES" (
+    echo wsl -d !WSL_DISTRO! -u root --exec sh -c "export PATH=!WSL_RUNPATH!; npm uninstall -g n8n --loglevel=error --no-fund --no-audit">> "!UNINSTALL_SCRIPT!"
+) else (
+    echo wsl -d !WSL_DISTRO! --exec sh -c "export PATH=!WSL_RUNPATH!; npm uninstall -g n8n --loglevel=error --no-fund --no-audit">> "!UNINSTALL_SCRIPT!"
+)
+echo if "%%REMOVE_DATA%%"=="YES" wsl -d !WSL_DISTRO! --exec rm -rf !WSLP_WSLHOME!/.n8n>> "!UNINSTALL_SCRIPT!"
+echo echo  Removing the Windows files...>> "!UNINSTALL_SCRIPT!"
+echo if exist "!START_SCRIPT!" del "!START_SCRIPT!" ^>nul 2^>^&1 >> "!UNINSTALL_SCRIPT!"
+echo if exist "!README_FILE!" del "!README_FILE!" ^>nul 2^>^&1 >> "!UNINSTALL_SCRIPT!"
+echo if exist "%USERPROFILE%\Desktop\Start n8n (WSL).lnk" del "%USERPROFILE%\Desktop\Start n8n (WSL).lnk" ^>nul 2^>^&1 >> "!UNINSTALL_SCRIPT!"
+echo if exist "%PUBLIC%\Desktop\Start n8n (WSL).lnk" del "%PUBLIC%\Desktop\Start n8n (WSL).lnk" ^>nul 2^>^&1 >> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo echo  ════════════════════════════════════════>> "!UNINSTALL_SCRIPT!"
+echo echo   Done>> "!UNINSTALL_SCRIPT!"
+echo echo  ════════════════════════════════════════>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo echo  n8n has been removed from !WSL_DISTRO!.>> "!UNINSTALL_SCRIPT!"
+echo if "%%REMOVE_DATA%%"=="NO" echo  Your workflows are still in !WSLP_WSLHOME!/.n8n>> "!UNINSTALL_SCRIPT!"
+echo echo  Node.js and the !WSL_DISTRO! distribution were not touched.>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo echo  You can delete this file when you are finished.>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo pause>> "!UNINSTALL_SCRIPT!"
+echo exit /b 0 >> "!UNINSTALL_SCRIPT!"
+echo.>> "!UNINSTALL_SCRIPT!"
+echo :CANCEL>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo echo  Cancelled. Nothing was changed.>> "!UNINSTALL_SCRIPT!"
+echo echo.>> "!UNINSTALL_SCRIPT!"
+echo pause>> "!UNINSTALL_SCRIPT!"
+echo exit /b 0 >> "!UNINSTALL_SCRIPT!"
+
+echo  [✓] Uninstaller created: !UNINSTALL_SCRIPT!
+
 :WSL_COMPLETE
 cls
 echo.
@@ -2330,6 +2402,7 @@ echo  [✓] Linux user: !WSLP_WSLUSER!
 echo  [✓] Data directory: !WSLP_WSLHOME!/.n8n
 echo  [✓] Start script: !START_SCRIPT!
 echo  [✓] README file: !README_FILE!
+echo  [✓] Uninstaller: !UNINSTALL_SCRIPT!
 echo.
 echo  ────────────────────────────────────────
 echo.
@@ -2348,7 +2421,7 @@ echo  1. Run: !START_SCRIPT!
 echo  2. Open http://localhost:!N8N_PORT! in your browser
 echo  3. Create your first workflow
 echo.
-echo  For more information, see README-WSL.txt in %USERPROFILE%\n8n
+echo  For more information, see README.txt in !WSL_HOME_DIR!
 echo.
 pause
 exit /b 0
