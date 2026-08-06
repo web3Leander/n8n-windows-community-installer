@@ -7,6 +7,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2] - 2026-08-06
+
+### Added
+
+- **WSL2 (Windows Subsystem for Linux) Guided Installation (Option 4)**:
+  - Guided setup for installing n8n inside a WSL2 Linux distribution, added alongside the existing options 1-3, which are unchanged
+  - Multi-distro enumeration via `wsl -l -q` with UTF-16LE decoding, and automatic filtering of system utility distros (`docker-desktop`, `rancher-desktop`)
+  - Detection of the distro family and package manager (`apt-get`, `apk`, `dnf`, `pacman`, `zypper`)
+  - Applies the same Node.js rule as native installs (`20.19+` or `22.x LTS`); when the distro's Node.js does not match, the installer explains what it found and offers to install Node.js 22 LTS, continue anyway, switch distro, or go back
+  - Installs as `root` only when npm's prefix is a system path. If Node.js is managed inside the user's home directory (for example nvm), installation runs as that user so the Node.js tree is never left root-owned
+  - npm is reported but never modified, matching the existing npm handling on Windows
+  - Native Linux filesystem data storage via `N8N_USER_FOLDER=/home/<user>`, so n8n creates `/home/<user>/.n8n`
+  - Generated `start_n8n_wsl.bat` launcher under `%USERPROFILE%\n8n`, with an optional update check
+  - Sets `N8N_LISTEN_ADDRESS=0.0.0.0` inside the WSL virtual machine so the port is published on IPv4 loopback. n8n otherwise binds the IPv6 wildcard, which WSL publishes as `[::1]` only and makes `http://127.0.0.1` fail. The instance stays unreachable from the LAN, since the WSL VM is behind NAT and WSL forwards to Windows loopback only
+  - Detection of existing n8n installations inside the selected distribution, with the same `DELETE` overwrite confirmation used by options 1 and 2
+
 ## [0.1.7] - 2026-08-02
 
 ### Changed
